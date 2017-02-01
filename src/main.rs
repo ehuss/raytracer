@@ -2,38 +2,21 @@ extern crate raytracer;
 
 use raytracer::*;
 
-fn hit_sphere(center: Vec3<f64>, radius: f64, r: &Ray<f64>) -> bool {
-    // Equation to test if ray hits sphere:
-    //    ray = p(t) = A + t*B
-    //    dot((p(t)-c), (p(t)-c)) = radius*radius
-    // Replace and expand:
-    //    t*t*dot(B, B) + 2*t*dot(B, A-C) + dot(A-C, A-C) - R*R = 0
-    // Solve for t.
-    //    If the sqrt is >0, 2 solutions (hit both sides of sphere).
-    //                 ==0, one solution, tangent to the surface.
-    //                 <0, no solutions (didn't hit)
-    let oc = r.origin() - center;
-    let a = dot(&r.direction(), &r.direction());
-    let b = 2.0 * dot(&oc, &r.direction());
-    let c = dot(&oc, &oc) - radius*radius;
-    let discriminant = b*b - 4.0*a*c;
-    discriminant > 0.0
-}
-
 /// Get color for ray r cast into scene.
 ///
-/// Linear blend blue-to-while vertically.
-/// Red sphere in the middle.
-fn color(r: &Ray<f64>) -> Vec3<f64> {
-    if hit_sphere(Vec3::new(0.0, 0.0, -1.0), 0.5, &r) {
-        return Vec3::new(1.0, 0.0, 0.0);  // Red
+/// Very basic shading model where a hit on the surface yields a color that
+/// represents the normal vector (mapped to range 0..1).
+/// A miss into the background is a linear gradient from white to blue.
+fn color<T: Hitable>(r: &Ray<f64>, world: &T) -> Vec3<f64> {
+    if let Some(h) = world.hit(r, 0.0, std::f64::MAX) {
+        return 0.5 * Vec3::new(h.normal.x + 1.0,
+                          h.normal.y + 1.0,
+                          h.normal.z + 1.0);
+    } else {
+        let unit_direction = r.direction().unit_vector();
+        let t = 0.5 * (unit_direction.y + 1.0);
+        return (1.0-t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0);
     }
-    // y will transition from -1 to +1
-    let unit_direction = r.direction().unit_vector();
-    // translate y to range 0..1
-    let t = 0.5 * (unit_direction.y + 1.0);
-    // Linear blend white to blue.
-    (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
 }
 
 // Camera is at 0,0,0
@@ -48,13 +31,18 @@ fn main() {
     let lower_left_corner = Vec3::new(-2.0, -1.0, -1.0);
     let horizontal = Vec3::new(4.0, 0.0, 0.0);
     let vertical = Vec3::new(0.0, 2.0, 0.0);
-    let origin = Vec3::new(0.0, 0.0, 0.0);
+    let origin = Vec3::zero();
+    let mut world = HitableList::new();
+    // Small sphere.
+    world.add_hitable(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5));
+    // Really huge sphere (covers bottom of screen).
+    world.add_hitable(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0));
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let u = i as f64 / nx as f64;
             let v = j as f64 / ny as f64;
             let r = Ray::new(origin, lower_left_corner + u*horizontal + v*vertical);
-            let col = color(&r);
+            let col = color(&r, &world);
             let ir = (255.99 * col.x) as u32;
             let ig = (255.99 * col.y) as u32;
             let ib = (255.99 * col.z) as u32;
