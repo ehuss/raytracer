@@ -6,18 +6,25 @@ use num_traits::Float;
 pub struct Ray<T: Float> {
     A: Vec3<T>,
     B: Vec3<T>,
+    /// Timestamp of when this ray was fired.
+    t: f64,
 }
 
 impl<T: Float> Ray<T> {
     pub fn new(a: Vec3<T>, b: Vec3<T>) -> Ray<T> {
-        Ray { A: a, B: b }
+        Ray { A: a, B: b, t: 0.0 }
     }
-
+    pub fn new_time(a: Vec3<T>, b: Vec3<T>, time: f64) -> Ray<T> {
+        Ray { A: a, B: b, t: time }
+    }
     pub fn origin(&self) -> Vec3<T> {
         self.A
     }
     pub fn direction(&self) -> Vec3<T> {
         self.B
+    }
+    pub fn time(&self) -> f64 {
+        self.t
     }
     pub fn point_at_parameter(&self, t: T) -> Vec3<T> {
         self.A + self.B * t

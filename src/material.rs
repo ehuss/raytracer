@@ -51,10 +51,10 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, rng: &mut Rng, _: &Ray<f64>, rec: &HitRecord) -> Option<(Ray<f64>, Vec3<f64>)> {
+    fn scatter(&self, rng: &mut Rng, r_in: &Ray<f64>, rec: &HitRecord) -> Option<(Ray<f64>, Vec3<f64>)> {
         let target = rec.p + rec.normal + random_in_unit_sphere(rng);
         Some((
-            Ray::new(rec.p, target-rec.p),
+            Ray::new_time(rec.p, target-rec.p, r_in.time()),
             self.albedo
             ))
     }
