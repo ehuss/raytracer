@@ -35,7 +35,11 @@ fn main() {
     let ny = 200;
     let ns = 100;
     println!("P3\n{} {}\n255", nx, ny);
-    let cam = Camera::new(Vec3::new(-2.0,2.0,1.0), Vec3::new(0.0, 0.0, -1.0), Vec3::new(0.0, 1.0, 0.0), 90.0, nx as f64/ny as f64);
+    let lookfrom = Vec3::new(3.0, 3.0, 2.0);
+    let lookat = Vec3::new(0.0, 0.0, -1.0);
+    let dist_to_focus = (lookfrom-lookat).length();
+    let aperture = 2.0;
+    let cam = Camera::new(lookfrom, lookat, Vec3::new(0.0, 1.0, 0.0), 20.0, nx as f64/ny as f64, aperture, dist_to_focus);
     let mut world = HitableList::new();
     // Small sphere.
     world.add_hitable(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.1, 0.2, 0.5)))));
@@ -50,7 +54,7 @@ fn main() {
             for _ in 0..ns {
                 let u = (i as f64 + rng.rand64()) / nx as f64;
                 let v = (j as f64 + rng.rand64()) / ny as f64;
-                let r = cam.get_ray(u, v);
+                let r = cam.get_ray(&mut rng, u, v);
                 col += color(&mut rng, &r, &world, 0);
             }
             col /= ns as f64;
