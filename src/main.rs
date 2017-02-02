@@ -35,7 +35,7 @@ fn main() {
     let ny = 200;
     let ns = 100;
     println!("P3\n{} {}\n255", nx, ny);
-    let cam = Camera::new();
+    let cam = Camera::new(Vec3::new(-2.0,2.0,1.0), Vec3::new(0.0, 0.0, -1.0), Vec3::new(0.0, 1.0, 0.0), 90.0, nx as f64/ny as f64);
     let mut world = HitableList::new();
     // Small sphere.
     world.add_hitable(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.1, 0.2, 0.5)))));
