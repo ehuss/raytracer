@@ -38,11 +38,11 @@ fn main() {
     let cam = Camera::new();
     let mut world = HitableList::new();
     // Small sphere.
-    world.add_hitable(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.8, 0.3, 0.3)))));
+    world.add_hitable(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.1, 0.2, 0.5)))));
     // Really huge sphere (covers bottom of screen).
     world.add_hitable(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, Rc::new(Lambertian::new(Vec3::new(0.8, 0.8, 0.0)))));
-    world.add_hitable(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.6, 0.2), 1.0))));
-    world.add_hitable(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8), 0.3))));
+    world.add_hitable(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.6, 0.2), 0.2))));
+    world.add_hitable(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, Rc::new(Dielectric::new(1.5))));
     let mut rng = Rng::new();
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
