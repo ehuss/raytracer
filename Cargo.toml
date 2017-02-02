@@ -5,3 +5,8 @@ version = "0.1.0"
 [dependencies]
 num-traits = "0.1.36"
 rand = "0.3.15"
+
+[profile.release]
+lto = true
+# Other things that seem to help, but can't be specified in Cargo.toml:
+# -C target-cpu=haswell

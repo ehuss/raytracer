@@ -1,6 +1,5 @@
 use vec3::*;
 use ray::*;
-use std;
 
 pub struct Camera {
     origin: Vec3<f64>,
