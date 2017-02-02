@@ -8,6 +8,7 @@ pub mod hitable_list;
 pub mod sphere;
 pub mod camera;
 pub mod util;
+pub mod material;
 
 pub use vec3::*;
 pub use ray::*;
@@ -16,3 +17,4 @@ pub use hitable_list::*;
 pub use sphere::*;
 pub use camera::*;
 pub use util::*;
+pub use material::*;

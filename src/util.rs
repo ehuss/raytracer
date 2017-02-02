@@ -1,5 +1,6 @@
 use rand;
 use rand::Rng as R;
+pub use std::rc::Rc;
 
 pub struct Rng {
     rng: rand::XorShiftRng,

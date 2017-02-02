@@ -1,17 +1,21 @@
 use vec3::*;
 use ray::Ray;
 use hitable::*;
+use material::*;
+use util::*;
 
 pub struct Sphere {
     center: Vec3<f64>,
     radius: f64,
+    material: Rc<Material>,
 }
 
 impl Sphere {
-    pub fn new(cen: Vec3<f64>, r: f64) -> Sphere {
+    pub fn new(cen: Vec3<f64>, r: f64, material: Rc<Material>) -> Sphere {
         Sphere {
             center: cen,
             radius: r,
+            material: material
         }
     }
 }
@@ -27,13 +31,13 @@ impl Hitable for Sphere {
             let temp = (-b - discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
-                let h = HitRecord::new(temp, p, (p - self.center) / self.radius);
+                let h = HitRecord::new(temp, p, (p - self.center) / self.radius, self.material.clone());
                 return Some(h);
             }
             let temp = (-b + discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
-                let h = HitRecord::new(temp, p, (p - self.center) / self.radius);
+                let h = HitRecord::new(temp, p, (p - self.center) / self.radius, self.material.clone());
                 return Some(h);
             }
         }

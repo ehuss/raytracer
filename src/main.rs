@@ -3,31 +3,20 @@ extern crate rand;
 
 use raytracer::*;
 
-/// Get a random point on a unit sphere.
-fn random_in_unit_sphere(rng: &mut Rng) -> Vec3<f64>
-{
-    // Simple algorithm, pick a random point in a unit cube (range -1..1).
-    // Repeat if the point is outside the sphere.
-    loop {
-        let p = 2.0 * Vec3::new(rng.rand64(), rng.rand64(), rng.rand64()) - Vec3::new(1.0, 1.0, 1.0);
-        if p.squared_length() < 1.0 {
-            return p;
-        }
-    }
-}
-
-
 /// Get color for ray r cast into scene.
 ///
 /// A miss into the background is a linear gradient from white to blue.
-fn color<T: Hitable>(rng: &mut Rng, r: &Ray<f64>, world: &T) -> Vec3<f64>
+fn color<T: Hitable>(rng: &mut Rng, r: &Ray<f64>, world: &T, depth: u8) -> Vec3<f64>
 {
     // Use 0.0001 to ignore hits very near zero (the ray should travel at
     // least some distance).
     if let Some(h) = world.hit(r, 0.0001, std::f64::MAX) {
-        let target = h.p + h.normal + random_in_unit_sphere(rng);
-        // Takes half the color from a random ray from the surface.
-        return 0.5 * color(rng, &Ray::new(h.p, target-h.p), world);
+        if depth < 50 {
+            if let Some((scattered, attenuation)) = h.material.scatter(rng, r, &h) {
+                return attenuation * color(rng, &scattered, world, depth+1);
+            }
+        }
+        return Vec3::zero();
     } else {
         // Hit background.
         let unit_direction = r.direction().unit_vector();
@@ -49,9 +38,11 @@ fn main() {
     let cam = Camera::new();
     let mut world = HitableList::new();
     // Small sphere.
-    world.add_hitable(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5));
+    world.add_hitable(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.8, 0.3, 0.3)))));
     // Really huge sphere (covers bottom of screen).
-    world.add_hitable(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0));
+    world.add_hitable(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, Rc::new(Lambertian::new(Vec3::new(0.8, 0.8, 0.0)))));
+    world.add_hitable(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.6, 0.2), 1.0))));
+    world.add_hitable(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8), 0.3))));
     let mut rng = Rng::new();
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
@@ -60,7 +51,7 @@ fn main() {
                 let u = (i as f64 + rng.rand64()) / nx as f64;
                 let v = (j as f64 + rng.rand64()) / ny as f64;
                 let r = cam.get_ray(u, v);
-                col += color(&mut rng, &r, &world);
+                col += color(&mut rng, &r, &world, 0);
             }
             col /= ns as f64;
             // Poor-man's gamma correction.
