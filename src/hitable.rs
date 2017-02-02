@@ -21,7 +21,7 @@ impl HitRecord {
             t: t,
             p: p,
             normal: normal,
-            material: m
+            material: m,
         }
     }
 }

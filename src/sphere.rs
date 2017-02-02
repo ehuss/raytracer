@@ -15,7 +15,7 @@ impl Sphere {
         Sphere {
             center: cen,
             radius: r,
-            material: material
+            material: material,
         }
     }
 }
@@ -31,13 +31,19 @@ impl Hitable for Sphere {
             let temp = (-b - discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
-                let h = HitRecord::new(temp, p, (p - self.center) / self.radius, self.material.clone());
+                let h = HitRecord::new(temp,
+                                       p,
+                                       (p - self.center) / self.radius,
+                                       self.material.clone());
                 return Some(h);
             }
             let temp = (-b + discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
-                let h = HitRecord::new(temp, p, (p - self.center) / self.radius, self.material.clone());
+                let h = HitRecord::new(temp,
+                                       p,
+                                       (p - self.center) / self.radius,
+                                       self.material.clone());
                 return Some(h);
             }
         }

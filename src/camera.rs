@@ -28,9 +28,18 @@ pub struct Camera {
 impl Camera {
     /// Create a new camera.
     /// vfov is field of view vertically in degrees.
-    pub fn new(lookfrom: Vec3<f64>, lookat: Vec3<f64>, vup: Vec3<f64>, vfov: f64, aspect: f64, aperture: f64, focus_dist: f64, t0: f64, t1: f64) -> Camera {
+    pub fn new(lookfrom: Vec3<f64>,
+               lookat: Vec3<f64>,
+               vup: Vec3<f64>,
+               vfov: f64,
+               aspect: f64,
+               aperture: f64,
+               focus_dist: f64,
+               t0: f64,
+               t1: f64)
+               -> Camera {
         let theta = vfov * std::f64::consts::PI / 180.0;
-        let half_height = (theta/2.0).tan();
+        let half_height = (theta / 2.0).tan();
         let half_width = aspect * half_height;
         let w = (lookfrom - lookat).unit_vector();
         let u = cross(&vup, &w).unit_vector();
@@ -38,9 +47,11 @@ impl Camera {
 
         Camera {
             origin: lookfrom,
-            lower_left_corner: lookfrom - half_width*focus_dist*u - half_height*focus_dist*v - focus_dist*w,
-            horizontal: 2.0*half_width*focus_dist*u,
-            vertical: 2.0*half_height*focus_dist*v,
+            lower_left_corner: lookfrom - half_width * focus_dist * u -
+                               half_height * focus_dist * v -
+                               focus_dist * w,
+            horizontal: 2.0 * half_width * focus_dist * u,
+            vertical: 2.0 * half_height * focus_dist * v,
             u: u,
             v: v,
             w: w,
@@ -54,8 +65,10 @@ impl Camera {
         let rd = self.lens_radius * random_in_unit_disk(rng);
         let offset = self.u * rd.x + self.v * rd.y;
         // Emit the ray at some random time while the shutter is open.
-        let time = self.time0 + rng.rand64()*(self.time1-self.time0);
+        let time = self.time0 + rng.rand64() * (self.time1 - self.time0);
         Ray::new_time(self.origin + offset,
-                 self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin - offset, time)
+                      self.lower_left_corner + s * self.horizontal + t * self.vertical -
+                      self.origin - offset,
+                      time)
     }
 }

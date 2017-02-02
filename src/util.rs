@@ -8,7 +8,7 @@ pub struct Rng {
 
 impl Rng {
     pub fn new() -> Rng {
-        Rng{rng: rand::weak_rng()}
+        Rng { rng: rand::weak_rng() }
     }
     #[inline(always)]
     pub fn rand64(&mut self) -> f64 {

@@ -6,14 +6,13 @@ use raytracer::*;
 /// Get color for ray r cast into scene.
 ///
 /// A miss into the background is a linear gradient from white to blue.
-fn color<T: Hitable>(rng: &mut Rng, r: &Ray<f64>, world: &T, depth: u8) -> Vec3<f64>
-{
+fn color<T: Hitable>(rng: &mut Rng, r: &Ray<f64>, world: &T, depth: u8) -> Vec3<f64> {
     // Use 0.0001 to ignore hits very near zero (the ray should travel at
     // least some distance).
     if let Some(h) = world.hit(r, 0.0001, std::f64::MAX) {
         if depth < 50 {
             if let Some((scattered, attenuation)) = h.material.scatter(rng, r, &h) {
-                return attenuation * color(rng, &scattered, world, depth+1);
+                return attenuation * color(rng, &scattered, world, depth + 1);
             }
         }
         return Vec3::zero();
@@ -21,38 +20,56 @@ fn color<T: Hitable>(rng: &mut Rng, r: &Ray<f64>, world: &T, depth: u8) -> Vec3<
         // Hit background.
         let unit_direction = r.direction().unit_vector();
         let t = 0.5 * (unit_direction.y + 1.0);
-        return (1.0-t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0);
+        return (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0);
     }
 }
 
 fn random_scene<'a>(rng: &mut Rng) -> HitableList<'a> {
     let mut list = HitableList::new();
-    list.add_hitable(Sphere::new(Vec3::new(0.0, -1000.0, 0.0), 1000.0, Rc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)))));
+    list.add_hitable(Sphere::new(Vec3::new(0.0, -1000.0, 0.0),
+                                 1000.0,
+                                 Rc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)))));
     // XXX: Not sure why explicit i8 is required here to cast to f64.
     for a in -10..10i8 {
         for b in -10..10i8 {
             let choose_mat = rng.rand64();
-            let center = Vec3::new(a as f64 + 0.9 * rng.rand64(), 0.2, b as f64+0.9*rng.rand64());
-            if (center-Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.8 { //diffuse
+            let center = Vec3::new(a as f64 + 0.9 * rng.rand64(),
+                                   0.2,
+                                   b as f64 + 0.9 * rng.rand64());
+            if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                if choose_mat < 0.8 {
+                    // diffuse
                     list.add_hitable(
                         MovingSphere::new(center, center+Vec3::new(0.0,0.5*rng.rand64(), 0.0), 0.0, 1.0, 0.2, Rc::new(Lambertian::new(
                             Vec3::new(rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64())))));
-                } else if choose_mat < 0.95 { //metal
-                    list.add_hitable(
-                        Sphere::new(center, 0.2, Rc::new(Metal::new(
-                            Vec3::new(0.5*(1.0 + rng.rand64()),
-                                      0.5*(1.0 + rng.rand64()),
-                                      0.5*(1.0 + rng.rand64())), 0.5*rng.rand64()))));
-                } else { //glass
+                } else if choose_mat < 0.95 {
+                    // metal
+                    list.add_hitable(Sphere::new(center,
+                                                 0.2,
+                                                 Rc::new(Metal::new(Vec3::new(0.5 *
+                                                                              (1.0 +
+                                                                               rng.rand64()),
+                                                                              0.5 *
+                                                                              (1.0 +
+                                                                               rng.rand64()),
+                                                                              0.5 *
+                                                                              (1.0 +
+                                                                               rng.rand64())),
+                                                                    0.5 * rng.rand64()))));
+                } else {
+                    // glass
                     list.add_hitable(Sphere::new(center, 0.2, Rc::new(Dielectric::new(1.5))));
                 }
             }
         }
     }
     list.add_hitable(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, Rc::new(Dielectric::new(1.5))));
-    list.add_hitable(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, Rc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1)))));
-    list.add_hitable(Sphere::new(Vec3::new(4.0, 1.0, 0.0), 1.0, Rc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0))));
+    list.add_hitable(Sphere::new(Vec3::new(-4.0, 1.0, 0.0),
+                                 1.0,
+                                 Rc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1)))));
+    list.add_hitable(Sphere::new(Vec3::new(4.0, 1.0, 0.0),
+                                 1.0,
+                                 Rc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0))));
     return list;
 }
 
@@ -71,7 +88,15 @@ fn main() {
     let lookat = Vec3::new(0.0, 0.0, 0.0);
     let dist_to_focus = 10.0;//(lookfrom-lookat).length();
     let aperture = 0.1;
-    let cam = Camera::new(lookfrom, lookat, Vec3::new(0.0, 1.0, 0.0), 20.0, nx as f64/ny as f64, aperture, dist_to_focus, 0.0, 1.0);
+    let cam = Camera::new(lookfrom,
+                          lookat,
+                          Vec3::new(0.0, 1.0, 0.0),
+                          20.0,
+                          nx as f64 / ny as f64,
+                          aperture,
+                          dist_to_focus,
+                          0.0,
+                          1.0);
     let world = random_scene(&mut rng);
     for j in (0..ny - 1).rev() {
         for i in 0..nx {

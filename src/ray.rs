@@ -12,10 +12,18 @@ pub struct Ray<T: Float> {
 
 impl<T: Float> Ray<T> {
     pub fn new(a: Vec3<T>, b: Vec3<T>) -> Ray<T> {
-        Ray { A: a, B: b, t: 0.0 }
+        Ray {
+            A: a,
+            B: b,
+            t: 0.0,
+        }
     }
     pub fn new_time(a: Vec3<T>, b: Vec3<T>, time: f64) -> Ray<T> {
-        Ray { A: a, B: b, t: time }
+        Ray {
+            A: a,
+            B: b,
+            t: time,
+        }
     }
     pub fn origin(&self) -> Vec3<T> {
         self.A
