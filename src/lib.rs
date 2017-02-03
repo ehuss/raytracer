@@ -10,6 +10,8 @@ pub mod moving_sphere;
 pub mod camera;
 pub mod util;
 pub mod material;
+pub mod aabb;
+pub mod bvh;
 
 pub use vec3::*;
 pub use ray::*;
@@ -20,3 +22,5 @@ pub use moving_sphere::*;
 pub use camera::*;
 pub use util::*;
 pub use material::*;
+pub use aabb::*;
+pub use bvh::*;

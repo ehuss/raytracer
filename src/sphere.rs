@@ -3,7 +3,9 @@ use ray::Ray;
 use hitable::*;
 use material::*;
 use util::*;
+use aabb::*;
 
+#[derive(Debug)]
 pub struct Sphere {
     center: Vec3<f64>,
     radius: f64,
@@ -48,5 +50,10 @@ impl Hitable for Sphere {
             }
         }
         return None;
+    }
+
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<AABB> {
+        Some(AABB::new(self.center - Vec3::new(self.radius, self.radius, self.radius),
+                       self.center + Vec3::new(self.radius, self.radius, self.radius)))
     }
 }

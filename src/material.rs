@@ -33,7 +33,7 @@ fn schlick(cosine: f64, ref_idx: f64) -> f64 {
     return r0 + (1.0 - r0) * (1.0 - cosine).powi(5);
 }
 
-pub trait Material {
+pub trait Material: fmt::Debug {
     /// Return is (scattered, attenuation) where scattered is the direction
     /// the ray should scatter in.  Attenuation is the attenuation of the
     /// color.  Return None if there is no scatter.
@@ -44,6 +44,7 @@ pub trait Material {
                -> Option<(Ray<f64>, Vec3<f64>)>;
 }
 
+#[derive(Debug)]
 pub struct Lambertian {
     albedo: Vec3<f64>,
 }
@@ -115,7 +116,10 @@ impl Material for Metal {
     }
 }
 
+
+#[derive(Debug)]
 pub struct Dielectric {
+    /// Refractive index.
     ref_idx: f64,
 }
 

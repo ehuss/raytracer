@@ -1,6 +1,8 @@
 use hitable::*;
 use ray::Ray;
+use aabb::*;
 
+#[derive(Debug)]
 pub struct HitableList<'a> {
     list: Vec<Box<Hitable + 'a>>,
 }
@@ -26,5 +28,26 @@ impl<'a> Hitable for HitableList<'a> {
             }
         }
         return result;
+    }
+
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> {
+        if self.list.len() == 0 {
+            return None;
+        }
+        let bb1 = self.list[0].bounding_box(t0, t1);
+        if let Some(bb1) = bb1 {
+            let mut bb = bb1;
+            for h in self.list.iter().skip(1) {
+                if let Some(temp_box) = h.bounding_box(t0, t1) {
+                    bb = surrounding_box(&bb, &temp_box);
+                } else {
+                    // One of our items is infinite.
+                    return None;
+                }
+            }
+            return Some(bb);
+        } else {
+            return None;
+        }
     }
 }

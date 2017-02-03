@@ -8,5 +8,6 @@ rand = "0.3.15"
 
 [profile.release]
 lto = true
+debug = true
 # Other things that seem to help, but can't be specified in Cargo.toml:
 # -C target-cpu=haswell

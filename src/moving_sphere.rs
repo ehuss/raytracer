@@ -3,7 +3,9 @@ use ray::Ray;
 use hitable::*;
 use material::*;
 use util::*;
+use aabb::*;
 
+#[derive(Debug)]
 pub struct MovingSphere {
     /// Position at time0.
     center0: Vec3<f64>,
@@ -71,4 +73,13 @@ impl Hitable for MovingSphere {
         }
         return None;
     }
+
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> {
+        let box0 = AABB::new(self.center(t0) - Vec3::new(self.radius, self.radius, self.radius),
+                             self.center(t0) + Vec3::new(self.radius, self.radius, self.radius));
+        let box1 = AABB::new(self.center(t1) - Vec3::new(self.radius, self.radius, self.radius),
+                             self.center(t1) + Vec3::new(self.radius, self.radius, self.radius));
+        return Some(surrounding_box(&box0, &box1));
+    }
+
 }

@@ -1,5 +1,6 @@
 use vec3::Vec3;
 use num_traits::Float;
+use util::*;
 
 #[derive(Debug)]
 #[allow(non_snake_case)]
@@ -38,6 +39,14 @@ impl<T: Float> Ray<T> {
         self.A + self.B * t
     }
 }
+
+impl <T: Float + fmt::Display> fmt::Display for Ray<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let p = f.precision().unwrap_or(3);
+        write!(f, "Ray({:.*}, {:.*}, {:.*})", p, self.A, p, self.B, p, self.t)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

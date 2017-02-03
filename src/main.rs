@@ -1,12 +1,11 @@
 extern crate raytracer;
-extern crate rand;
 
 use raytracer::*;
 
 /// Get color for ray r cast into scene.
 ///
 /// A miss into the background is a linear gradient from white to blue.
-fn color<T: Hitable>(rng: &mut Rng, r: &Ray<f64>, world: &T, depth: u8) -> Vec3<f64> {
+fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f64> {
     // Use 0.0001 to ignore hits very near zero (the ray should travel at
     // least some distance).
     if let Some(h) = world.hit(r, 0.0001, std::f64::MAX) {
@@ -24,11 +23,11 @@ fn color<T: Hitable>(rng: &mut Rng, r: &Ray<f64>, world: &T, depth: u8) -> Vec3<
     }
 }
 
-fn random_scene<'a>(rng: &mut Rng) -> HitableList<'a> {
-    let mut list = HitableList::new();
-    list.add_hitable(Sphere::new(Vec3::new(0.0, -1000.0, 0.0),
+fn random_scene(rng: &mut Rng) -> Box<Hitable> {
+    let mut list: Vec<Box<Hitable>> = Vec::new();
+    list.push(Box::new(Sphere::new(Vec3::new(0.0, -1000.0, 0.0),
                                  1000.0,
-                                 Rc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)))));
+                                 Rc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5))))));
     // XXX: Not sure why explicit i8 is required here to cast to f64.
     for a in -10..10i8 {
         for b in -10..10i8 {
@@ -39,12 +38,12 @@ fn random_scene<'a>(rng: &mut Rng) -> HitableList<'a> {
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 if choose_mat < 0.8 {
                     // diffuse
-                    list.add_hitable(
+                    list.push(Box::new(
                         MovingSphere::new(center, center+Vec3::new(0.0,0.5*rng.rand64(), 0.0), 0.0, 1.0, 0.2, Rc::new(Lambertian::new(
-                            Vec3::new(rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64())))));
+                            Vec3::new(rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64()))))));
                 } else if choose_mat < 0.95 {
                     // metal
-                    list.add_hitable(Sphere::new(center,
+                    list.push(Box::new(Sphere::new(center,
                                                  0.2,
                                                  Rc::new(Metal::new(Vec3::new(0.5 *
                                                                               (1.0 +
@@ -55,22 +54,22 @@ fn random_scene<'a>(rng: &mut Rng) -> HitableList<'a> {
                                                                               0.5 *
                                                                               (1.0 +
                                                                                rng.rand64())),
-                                                                    0.5 * rng.rand64()))));
+                                                                    0.5 * rng.rand64())))));
                 } else {
                     // glass
-                    list.add_hitable(Sphere::new(center, 0.2, Rc::new(Dielectric::new(1.5))));
+                    list.push(Box::new(Sphere::new(center, 0.2, Rc::new(Dielectric::new(1.5)))));
                 }
             }
         }
     }
-    list.add_hitable(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, Rc::new(Dielectric::new(1.5))));
-    list.add_hitable(Sphere::new(Vec3::new(-4.0, 1.0, 0.0),
+    list.push(Box::new(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, Rc::new(Dielectric::new(1.5)))));
+    list.push(Box::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0),
                                  1.0,
-                                 Rc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1)))));
-    list.add_hitable(Sphere::new(Vec3::new(4.0, 1.0, 0.0),
+                                 Rc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1))))));
+    list.push(Box::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0),
                                  1.0,
-                                 Rc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0))));
-    return list;
+                                 Rc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0)))));
+    return Box::new(BVHNode::new(rng, list, 0.0, 1.0));
 }
 
 

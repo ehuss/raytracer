@@ -1,12 +1,12 @@
+use std::mem;
 use std::ops::*;
+use util::*;
 use num_traits::Float;
 pub use num_traits::Zero;
 
 // TODO:
 // - Hash?
-// - fmt::Display
 //
-// ○ Arithmetic operators:
 // ○ Index, IndexMut
 //
 // • std::convert:
@@ -209,6 +209,27 @@ impl<T: Float + DivAssign<T>> DivAssign<Vec3<T>> for Vec3<T> {
         self.z /= rhs.z;
     }
 }
+
+impl<N, T: Float> Index<N> for Vec3<T> where [T]: Index<N> {
+    type Output = <[T] as Index<N>>::Output;
+    #[inline(always)]
+    fn index(&self, i: N) -> &<[T] as Index<N>>::Output {
+        &self.as_ref()[i]
+    }
+}
+
+impl <T: Float> AsRef<[T; 3]> for Vec3<T> {
+    #[inline(always)]
+    fn as_ref(&self) -> &[T; 3] { unsafe { mem::transmute(self) } }
+}
+
+impl <T: Float + fmt::Display> fmt::Display for Vec3<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let p = f.precision().unwrap_or(3);
+        write!(f, "Vec3({:.*}, {:.*}, {:.*})", p, self.x, p, self.y, p, self.z)
+    }
+}
+
 
 pub fn dot<T: Float>(v1: &Vec3<T>, v2: &Vec3<T>) -> T {
     v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
