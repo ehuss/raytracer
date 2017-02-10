@@ -26,12 +26,15 @@ impl<T: Float> Ray<T> {
             t: time,
         }
     }
+    #[inline(always)]
     pub fn origin(&self) -> Vec3<T> {
         self.A
     }
+    #[inline(always)]
     pub fn direction(&self) -> Vec3<T> {
         self.B
     }
+    #[inline(always)]
     pub fn time(&self) -> f64 {
         self.t
     }

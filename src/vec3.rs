@@ -15,6 +15,12 @@ pub use num_traits::Zero;
 // (S, S, S)
 //
 
+pub enum Axis {
+    X,
+    Y,
+    Z,
+}
+
 #[derive(Copy, Clone, PartialEq, PartialOrd, Debug, Default)]
 pub struct Vec3<T: Float> {
     pub x: T,
