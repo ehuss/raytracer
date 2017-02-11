@@ -2,6 +2,7 @@ use ray::*;
 use hitable::*;
 use vec3::*;
 use util::*;
+use texture::*;
 
 /// Reflect a vector from a surface.
 /// v is the incoming vector, n is the normal of the surface.
@@ -46,11 +47,11 @@ pub trait Material: fmt::Debug {
 
 #[derive(Debug)]
 pub struct Lambertian {
-    albedo: Vec3<f64>,
+    albedo: Box<Texture>,
 }
 
 impl Lambertian {
-    pub fn new(a: Vec3<f64>) -> Lambertian {
+    pub fn new(a: Box<Texture>) -> Lambertian {
         Lambertian { albedo: a }
     }
 }
@@ -62,7 +63,9 @@ impl Material for Lambertian {
                rec: &HitRecord)
                -> Option<(Ray<f64>, Vec3<f64>)> {
         let target = rec.p + rec.normal + random_in_unit_sphere(rng);
-        Some((Ray::new_time(rec.p, target - rec.p, r_in.time()), self.albedo))
+        let scattered = Ray::new_time(rec.p, target - rec.p, r_in.time());
+        let attenuation = self.albedo.value(0., 0., rec.p);
+        Some((scattered, attenuation))
     }
 }
 

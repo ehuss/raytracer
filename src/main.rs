@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 extern crate raytracer;
 
 use raytracer::*;
@@ -23,11 +25,27 @@ fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f
     }
 }
 
+fn two_spheres(rng: &mut Rng) -> Box<Hitable> {
+    let checker = CheckerTexture::new(
+        Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 0.1))),
+        Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9)))
+    );
+    let mut list = HitableList::new();
+    let mat = Rc::new(Lambertian::new(Box::new(checker)));
+    list.add_hitable(Sphere::new(Vec3::new(0., -10., 0.), 10., mat.clone()));
+    list.add_hitable(Sphere::new(Vec3::new(0.,  10., 0.), 10., mat.clone()));
+    return Box::new(list);
+}
+
 fn random_scene(rng: &mut Rng) -> Box<Hitable> {
     let mut list: Vec<Box<Hitable>> = Vec::new();
+    let checker = CheckerTexture::new(
+        Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 0.1))),
+        Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9)))
+    );
     list.push(Box::new(Sphere::new(Vec3::new(0.0, -1000.0, 0.0),
                                    1000.0,
-                                   Rc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5))))));
+                                   Rc::new(Lambertian::new(Box::new(checker))))));
     // XXX: Not sure why explicit i8 is required here to cast to f64.
     for a in -10..10i8 {
         for b in -10..10i8 {
@@ -38,9 +56,10 @@ fn random_scene(rng: &mut Rng) -> Box<Hitable> {
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 if choose_mat < 0.8 {
                     // diffuse
+                    let texture = ConstantTexture::new(Vec3::new(rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64()));
                     list.push(Box::new(
                         MovingSphere::new(center, center+Vec3::new(0.0,0.5*rng.rand64(), 0.0), 0.0, 1.0, 0.2, Rc::new(Lambertian::new(
-                            Vec3::new(rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64(), rng.rand64()*rng.rand64()))))));
+                            Box::new(texture))))));
                 } else if choose_mat < 0.95 {
                     // metal
                     let mat = Metal::new(Vec3::new(0.5 * (1.0 + rng.rand64()),
@@ -56,9 +75,10 @@ fn random_scene(rng: &mut Rng) -> Box<Hitable> {
         }
     }
     list.push(Box::new(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, Rc::new(Dielectric::new(1.5)))));
+    let texture = ConstantTexture::new(Vec3::new(0.4, 0.2, 0.1));
     list.push(Box::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0),
                                    1.0,
-                                   Rc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1))))));
+                                   Rc::new(Lambertian::new(Box::new(texture))))));
     list.push(Box::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0),
                                    1.0,
                                    Rc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0)))));
@@ -78,7 +98,7 @@ fn main() {
     println!("P3\n{} {}\n255", nx, ny);
     let mut rng = Rng::new();
     let lookfrom = Vec3::new(13.0, 2.0, 3.0);
-    let lookat = Vec3::new(0.0, 0.0, 0.0);
+    let lookat = Vec3::zero();
     let dist_to_focus = 10.0;//(lookfrom-lookat).length();
     let aperture = 0.1;
     let cam = Camera::new(lookfrom,
@@ -90,7 +110,8 @@ fn main() {
                           dist_to_focus,
                           0.0,
                           1.0);
-    let world = random_scene(&mut rng);
+    // let world = random_scene(&mut rng);
+    let world = two_spheres(&mut rng);
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let mut col = Vec3::<f64>::zero();
