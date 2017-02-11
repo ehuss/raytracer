@@ -37,6 +37,15 @@ fn two_spheres(rng: &mut Rng) -> Box<Hitable> {
     return Box::new(list);
 }
 
+fn two_perlin_spheres(rng: &mut Rng) -> Box<Hitable> {
+    let pertext = NoiseTexture::new(4.);
+    let mut list = HitableList::new();
+    let mat = Rc::new(Lambertian::new(Box::new(pertext)));
+    list.add_hitable(Sphere::new(Vec3::new(0., -1000., 0.), 1000., mat.clone()));
+    list.add_hitable(Sphere::new(Vec3::new(0., 2., 0.), 2., mat.clone()));
+    return Box::new(list);
+}
+
 fn random_scene(rng: &mut Rng) -> Box<Hitable> {
     let mut list: Vec<Box<Hitable>> = Vec::new();
     let checker = CheckerTexture::new(
@@ -95,6 +104,7 @@ fn main() {
     let nx = 400;
     let ny = 200;
     let ns = 100;
+    perlin_init();
     println!("P3\n{} {}\n255", nx, ny);
     let mut rng = Rng::new();
     let lookfrom = Vec3::new(13.0, 2.0, 3.0);
@@ -111,7 +121,8 @@ fn main() {
                           0.0,
                           1.0);
     // let world = random_scene(&mut rng);
-    let world = two_spheres(&mut rng);
+    // let world = two_spheres(&mut rng);
+    let world = two_perlin_spheres(&mut rng);
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let mut col = Vec3::<f64>::zero();

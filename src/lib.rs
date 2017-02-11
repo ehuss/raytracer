@@ -13,6 +13,7 @@ pub mod material;
 pub mod aabb;
 pub mod bvh;
 pub mod texture;
+pub mod perlin;
 
 pub use vec3::*;
 pub use ray::*;
@@ -26,3 +27,4 @@ pub use material::*;
 pub use aabb::*;
 pub use bvh::*;
 pub use texture::*;
+pub use perlin::*;
