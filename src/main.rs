@@ -82,6 +82,11 @@ fn cornell_box() -> Box<Hitable> {
     list.add_hitable(FlipNormals::new(Box::new(XZRect::new(0., 555., 0., 555., 555., white.clone()))));
     list.add_hitable(XZRect::new(0., 555., 0., 555., 0., white.clone()));
     list.add_hitable(FlipNormals::new(Box::new(XYRect::new(0., 555., 0., 555., 555., white.clone()))));
+    let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 165., 165.), white.clone()));
+    list.add_hitable(Translate::new(Box::new(
+        RotateY::new(b, -18.)), Vec3::new(130., 0., 65.)));
+    let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 330., 165.), white.clone()));
+    list.add_hitable(Translate::new(Box::new(RotateY::new(b, 15.)), Vec3::new(265., 0., 295.)));
     return Box::new(list);
 }
 

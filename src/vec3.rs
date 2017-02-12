@@ -219,8 +219,16 @@ impl<T: Float + DivAssign<T>> DivAssign<Vec3<T>> for Vec3<T> {
 impl<N, T: Float> Index<N> for Vec3<T> where [T]: Index<N> {
     type Output = <[T] as Index<N>>::Output;
     #[inline(always)]
-    fn index(&self, i: N) -> &<[T] as Index<N>>::Output {
+    fn index(&self, i: N) -> &Self::Output {
         &self.as_ref()[i]
+    }
+}
+
+impl<N, T: Float> IndexMut<N> for Vec3<T>
+    where [T]: IndexMut<N> {
+    #[inline]
+    fn index_mut(&mut self, i: N) -> &mut Self::Output {
+        &mut self.as_mut()[i]
     }
 }
 
@@ -228,6 +236,14 @@ impl <T: Float> AsRef<[T; 3]> for Vec3<T> {
     #[inline(always)]
     fn as_ref(&self) -> &[T; 3] { unsafe { mem::transmute(self) } }
 }
+
+impl<T: Float> AsMut<[T; 3]> for Vec3<T> {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [T; 3] {
+        unsafe { mem::transmute(self) }
+    }
+}
+
 
 impl <T: Float + fmt::Display> fmt::Display for Vec3<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
