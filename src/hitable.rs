@@ -6,7 +6,7 @@ use aabb::*;
 use std::f64;
 
 /// A ray hit on a surface.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, new)]
 pub struct HitRecord {
     /// Point along ray.
     pub t: f64,
@@ -22,24 +22,11 @@ pub struct HitRecord {
     pub material: Rc<Material>,
 }
 
-impl HitRecord {
-    pub fn new(t: f64, u: f64, v: f64, p: Vec3<f64>, normal: Vec3<f64>, m: Rc<Material>) -> HitRecord {
-        HitRecord {
-            t: t,
-            u: u,
-            v: v,
-            p: p,
-            normal: normal,
-            material: m,
-        }
-    }
-}
-
 /// Used for surfaces/objects that can be "hit" by a ray.
 pub trait Hitable: fmt::Debug {
     /// Test for hit against surface.
     /// Returns None if no hit.
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord>;
+    fn hit(&self, rng: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord>;
 
     /// Generate a bounding box for this hitable object.
     ///
@@ -57,8 +44,8 @@ pub struct FlipNormals {
 }
 
 impl Hitable for FlipNormals {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
-        if let Some(mut h) = self.hitable.hit(r, t_min, t_max) {
+    fn hit(&self, rng: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        if let Some(mut h) = self.hitable.hit(rng, r, t_min, t_max) {
             h.normal = -h.normal;
             return Some(h);
         } else {
@@ -77,9 +64,9 @@ pub struct Translate {
 }
 
 impl Hitable for Translate {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+    fn hit(&self, rng: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let moved_r = Ray::new_time(r.origin() - self.offset, r.direction(), r.time());
-        match self.hitable.hit(&moved_r, t_min, t_max) {
+        match self.hitable.hit(rng, &moved_r, t_min, t_max) {
             Some(mut h) => {
                 h.p += self.offset;
                 Some(h)
@@ -148,7 +135,7 @@ impl RotateY {
 }
 
 impl Hitable for RotateY {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+    fn hit(&self, rng: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let mut origin = r.origin().clone();
         let mut direction = r.direction().clone();
         origin[0] = self.cos_theta*r.origin()[0] - self.sin_theta*r.origin()[2];
@@ -156,7 +143,7 @@ impl Hitable for RotateY {
         direction[0] = self.cos_theta*r.direction()[0] - self.sin_theta*r.direction()[2];
         direction[2] = self.sin_theta*r.direction()[0] + self.cos_theta*r.direction()[2];
         let rotated_r = Ray::new_time(origin, direction, r.time());
-        return self.hitable.hit(&rotated_r, t_min, t_max).map(|mut rec| {
+        return self.hitable.hit(rng, &rotated_r, t_min, t_max).map(|mut rec| {
             let mut p = rec.p.clone();
             let mut normal = rec.normal.clone();
             p[0] = self.cos_theta*rec.p[0] + self.sin_theta*rec.p[2];

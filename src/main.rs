@@ -11,7 +11,7 @@ use raytracer::*;
 fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f64> {
     // Use 0.0001 to ignore hits very near zero (the ray should travel at
     // least some distance).
-    if let Some(h) = world.hit(r, 0.0001, std::f64::MAX) {
+    if let Some(h) = world.hit(rng, r, 0.0001, std::f64::MAX) {
         let emitted = h.material.emitted(h.u, h.v, &h.p);
         if depth < 50 {
             if let Some((scattered, attenuation)) = h.material.scatter(rng, r, &h) {
@@ -90,6 +90,30 @@ fn cornell_box() -> Box<Hitable> {
     return Box::new(list);
 }
 
+fn cornell_smoke() -> Box<Hitable> {
+    let mut list = HitableList::new();
+    let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
+    let white = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73)))));
+    let green = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.12, 0.45, 0.15)))));
+    let light = Rc::new(DiffuseLight::new(Box::new(ConstantTexture::new(Vec3::new(7., 7., 7.)))));
+    list.add_hitable(FlipNormals::new(Box::new(YZRect::new(0., 555., 0., 555., 555., green.clone()))));
+    list.add_hitable(YZRect::new(0., 555., 0., 555., 0., red.clone()));
+    list.add_hitable(XZRect::new(113., 443., 127., 432., 554., light.clone()));
+    list.add_hitable(FlipNormals::new(Box::new(XZRect::new(0., 555., 0., 555., 555., white.clone()))));
+    list.add_hitable(XZRect::new(0., 555., 0., 555., 0., white.clone()));
+    list.add_hitable(FlipNormals::new(Box::new(XYRect::new(0., 555., 0., 555., 555., white.clone()))));
+    let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 165., 165.), white.clone()));
+    let b = Translate::new(Box::new(RotateY::new(b, -18.)), Vec3::new(130., 0., 65.));
+    let b = ConstantMedium::new(Box::new(b), 0.01, Box::new(ConstantTexture::new(Vec3::new(1., 1., 1.))));
+    list.add_hitable(b);
+    let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 330., 165.), white.clone()));
+    let b = Translate::new(Box::new(RotateY::new(b, 15.)), Vec3::new(265., 0., 295.));
+    let b = ConstantMedium::new(Box::new(b), 0.01, Box::new(ConstantTexture::new(Vec3::new(0., 0., 0.))));
+    list.add_hitable(b);
+    return Box::new(list);
+}
+
+
 fn random_scene(rng: &mut Rng) -> Box<Hitable> {
     let mut list: Vec<Box<Hitable>> = Vec::new();
     let checker = CheckerTexture::new(
@@ -167,7 +191,7 @@ fn main() {
     // let world = random_scene(&mut rng);
     // let world = two_spheres(&mut rng);
     // let world = two_perlin_spheres(&mut rng);
-    let world = cornell_box();
+    let world = cornell_smoke();
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let mut col = Vec3::<f64>::zero();

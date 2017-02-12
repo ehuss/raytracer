@@ -36,7 +36,7 @@ struct DummyNode {
 }
 impl Hitable for DummyNode {
     #![allow(unused)]
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> { None }
+    fn hit(&self, rng: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> { None }
     fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> { Some(self.bbox.clone()) }
 }
 impl fmt::Display for DummyNode {
@@ -154,10 +154,10 @@ impl BVHNode {
 }
 
 impl Hitable for BVHNode {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
-        if self.bbox.hit(r, t_min, t_max) {
-            let hit_left = self.left.hit(r, t_min, t_max);
-            let hit_right = self.right.hit(r, t_min, t_max);
+    fn hit(&self, rng: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        if self.bbox.hit(rng, r, t_min, t_max) {
+            let hit_left = self.left.hit(rng, r, t_min, t_max);
+            let hit_right = self.right.hit(rng, r, t_min, t_max);
             match (hit_left, hit_right) {
                 (Some(left), Some(right)) => {
                     if left.t < right.t {

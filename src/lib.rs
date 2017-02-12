@@ -19,6 +19,7 @@ pub mod texture;
 pub mod perlin;
 pub mod aarect;
 pub mod hbox;
+pub mod constant_medium;
 
 pub use vec3::*;
 pub use ray::*;
@@ -35,3 +36,4 @@ pub use texture::*;
 pub use perlin::*;
 pub use aarect::*;
 pub use hbox::*;
+pub use constant_medium::*;

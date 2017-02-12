@@ -1,6 +1,7 @@
 use hitable::*;
 use ray::Ray;
 use aabb::*;
+use util::*;
 
 #[derive(Debug)]
 pub struct HitableList<'a> {
@@ -18,11 +19,11 @@ impl<'a> HitableList<'a> {
 }
 
 impl<'a> Hitable for HitableList<'a> {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+    fn hit(&self, rng: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let mut result: Option<HitRecord> = None;
         let mut closest_so_far = t_max;
         for h in &self.list {
-            if let Some(hr) = h.hit(r, t_min, closest_so_far) {
+            if let Some(hr) = h.hit(rng, r, t_min, closest_so_far) {
                 closest_so_far = hr.t;
                 result = Some(hr);
             }

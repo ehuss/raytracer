@@ -32,8 +32,8 @@ impl<'a> HBox<'a> {
 }
 
 impl<'a> Hitable for HBox<'a> {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
-        self.hlist.hit(r, t_min, t_max)
+    fn hit(&self, rng: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        self.hlist.hit(rng, r, t_min, t_max)
     }
     #[allow(unused)]
     fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> {

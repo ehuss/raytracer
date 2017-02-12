@@ -55,7 +55,7 @@ impl AABB {
     }
 
     /// Check if the given ray hits the bounding box.
-    pub fn hit(&self, r: &Ray<f64>, tmin: f64, tmax: f64) -> bool {
+    pub fn hit(&self, _: &mut Rng, r: &Ray<f64>, tmin: f64, tmax: f64) -> bool {
 
         // Unfortunately rust (or llvm?
         // https://llvm.org/bugs/show_bug.cgi?id=27360) won't unroll the loop.

@@ -17,7 +17,7 @@ pub struct XYRect {
 
 
 impl Hitable for XYRect {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+    fn hit(&self, _: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let t = (self.k-r.origin().z) / r.direction().z;
         if t < t_min || t > t_max {
             return None;
@@ -52,7 +52,7 @@ pub struct XZRect {
 
 
 impl Hitable for XZRect {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+    fn hit(&self, _: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let t = (self.k-r.origin().y) / r.direction().y;
         if t < t_min || t > t_max {
             return None;
@@ -87,7 +87,7 @@ pub struct YZRect {
 
 
 impl Hitable for YZRect {
-    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+    fn hit(&self, _: &mut Rng, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let t = (self.k-r.origin().x) / r.direction().x;
         if t < t_min || t > t_max {
             return None;
