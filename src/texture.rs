@@ -5,6 +5,9 @@ use image;
 use image::{GenericImage, Pixel};
 
 pub trait Texture: fmt::Debug {
+    /// Return the color of the texture at the given UV coordinate.
+    ///
+    /// p is the hit location (in world coordinates).
     fn value(&self, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64>;
 }
 

@@ -1,6 +1,8 @@
 extern crate num_traits;
 extern crate rand;
 extern crate image;
+#[macro_use]
+extern crate derive_new;
 
 pub mod vec3;
 pub mod ray;
@@ -15,6 +17,7 @@ pub mod aabb;
 pub mod bvh;
 pub mod texture;
 pub mod perlin;
+pub mod aarect;
 
 pub use vec3::*;
 pub use ray::*;
@@ -29,3 +32,4 @@ pub use aabb::*;
 pub use bvh::*;
 pub use texture::*;
 pub use perlin::*;
+pub use aarect::*;

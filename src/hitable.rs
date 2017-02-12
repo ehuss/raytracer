@@ -5,7 +5,7 @@ use util::*;
 use aabb::*;
 
 /// A ray hit on a surface.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HitRecord {
     /// Point along ray.
     pub t: f64,
@@ -48,4 +48,23 @@ pub trait Hitable: fmt::Debug {
     /// Returns None if there is no valid bounding box (like an infinite
     /// plane).
     fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB>;
+}
+
+#[derive(Debug, new)]
+pub struct FlipNormals {
+    hitable: Box<Hitable>
+}
+
+impl Hitable for FlipNormals {
+    fn hit(&self, r: &Ray<f64>, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        if let Some(mut h) = self.hitable.hit(r, t_min, t_max) {
+            h.normal = -h.normal;
+            return Some(h);
+        } else {
+            return None;
+        }
+    }
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> {
+        self.hitable.bounding_box(t0, t1)
+    }
 }

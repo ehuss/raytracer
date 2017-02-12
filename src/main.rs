@@ -12,17 +12,21 @@ fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f
     // Use 0.0001 to ignore hits very near zero (the ray should travel at
     // least some distance).
     if let Some(h) = world.hit(r, 0.0001, std::f64::MAX) {
+        let emitted = h.material.emitted(h.u, h.v, &h.p);
         if depth < 50 {
             if let Some((scattered, attenuation)) = h.material.scatter(rng, r, &h) {
-                return attenuation * color(rng, &scattered, world, depth + 1);
+                return emitted + attenuation * color(rng, &scattered, world, depth + 1);
+            } else {
+                return emitted;
             }
         }
         return Vec3::zero();
     } else {
         // Hit background.
-        let unit_direction = r.direction().unit_vector();
-        let t = 0.5 * (unit_direction.y + 1.0);
-        return (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0);
+        // let unit_direction = r.direction().unit_vector();
+        // let t = 0.5 * (unit_direction.y + 1.0);
+        // return (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0);
+        return Vec3::zero();
     }
 }
 
@@ -53,6 +57,33 @@ fn earth() -> Box<Hitable> {
     return Box::new(Sphere::new(Vec3::zero(), 2., Rc::new(mat)));
 }
 
+fn simple_light() -> Box<Hitable> {
+    let pertext = NoiseTexture::new(4.);
+    let lamb_mat = Rc::new(Lambertian::new(Box::new(pertext)));
+    let ctex = ConstantTexture::new(Vec3::new(4.,4.,4.));
+    let lit_mat = Rc::new(DiffuseLight::new(Box::new(ctex)));
+    let mut list = HitableList::new();
+    list.add_hitable(Sphere::new(Vec3::new(0., -1000., 0.), 1000., lamb_mat.clone()));
+    list.add_hitable(Sphere::new(Vec3::new(0., 2., 0.), 2., lamb_mat.clone()));
+    list.add_hitable(Sphere::new(Vec3::new(0., 7., 0.), 2., lit_mat.clone()));
+    list.add_hitable(XYRect::new(3., 5., 1., 3., -2., lit_mat.clone()));
+    return Box::new(list);
+}
+
+fn cornell_box() -> Box<Hitable> {
+    let mut list = HitableList::new();
+    let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
+    let white = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73)))));
+    let green = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.12, 0.45, 0.15)))));
+    let light = Rc::new(DiffuseLight::new(Box::new(ConstantTexture::new(Vec3::new(15., 15., 15.)))));
+    list.add_hitable(FlipNormals::new(Box::new(YZRect::new(0., 555., 0., 555., 555., green.clone()))));
+    list.add_hitable(YZRect::new(0., 555., 0., 555., 0., red.clone()));
+    list.add_hitable(XZRect::new(213., 343., 227., 332., 554., light.clone()));
+    list.add_hitable(FlipNormals::new(Box::new(XZRect::new(0., 555., 0., 555., 555., white.clone()))));
+    list.add_hitable(XZRect::new(0., 555., 0., 555., 0., white.clone()));
+    list.add_hitable(FlipNormals::new(Box::new(XYRect::new(0., 555., 0., 555., 555., white.clone()))));
+    return Box::new(list);
+}
 
 fn random_scene(rng: &mut Rng) -> Box<Hitable> {
     let mut list: Vec<Box<Hitable>> = Vec::new();
@@ -115,14 +146,14 @@ fn main() {
     perlin_init();
     println!("P3\n{} {}\n255", nx, ny);
     let mut rng = Rng::new();
-    let lookfrom = Vec3::new(13.0, 2.0, 3.0);
-    let lookat = Vec3::zero();
+    let lookfrom = Vec3::new(278., 278., -800.);
+    let lookat = Vec3::new(278., 278., 0.);
     let dist_to_focus = 10.0;//(lookfrom-lookat).length();
-    let aperture = 0.1;
+    let aperture = 0.0;
     let cam = Camera::new(lookfrom,
                           lookat,
                           Vec3::new(0.0, 1.0, 0.0),
-                          20.0,
+                          40.0,
                           nx as f64 / ny as f64,
                           aperture,
                           dist_to_focus,
@@ -131,7 +162,7 @@ fn main() {
     // let world = random_scene(&mut rng);
     // let world = two_spheres(&mut rng);
     // let world = two_perlin_spheres(&mut rng);
-    let world = earth();
+    let world = cornell_box();
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let mut col = Vec3::<f64>::zero();

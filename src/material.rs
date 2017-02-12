@@ -43,6 +43,12 @@ pub trait Material: fmt::Debug {
                r_in: &Ray<f64>,
                rec: &HitRecord)
                -> Option<(Ray<f64>, Vec3<f64>)>;
+
+
+    #[allow(unused)]
+    fn emitted(&self, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64> {
+        Vec3::zero()
+    }
 }
 
 #[derive(Debug)]
@@ -167,5 +173,26 @@ impl Material for Dielectric {
         }
         let attenuation = Vec3::new(1.0, 1.0, 1.0);
         return Some((scattered, attenuation));
+    }
+}
+
+#[derive(Debug, new)]
+pub struct DiffuseLight {
+    emit: Box<Texture>
+}
+
+
+impl Material for DiffuseLight {
+    #[allow(unused)]
+    fn scatter(&self,
+               rng: &mut Rng,
+               r_in: &Ray<f64>,
+               rec: &HitRecord)
+               -> Option<(Ray<f64>, Vec3<f64>)> {
+        None
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64> {
+        self.emit.value(u, v, p)
     }
 }
