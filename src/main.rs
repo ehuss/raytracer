@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 extern crate raytracer;
+extern crate image;
 
 use raytracer::*;
 
@@ -45,6 +46,13 @@ fn two_perlin_spheres(rng: &mut Rng) -> Box<Hitable> {
     list.add_hitable(Sphere::new(Vec3::new(0., 2., 0.), 2., mat.clone()));
     return Box::new(list);
 }
+
+fn earth() -> Box<Hitable> {
+    let img = image::open("earthmap1k.jpg").unwrap();
+    let mat = Lambertian::new(Box::new(ImageTexture::new(img)));
+    return Box::new(Sphere::new(Vec3::zero(), 2., Rc::new(mat)));
+}
+
 
 fn random_scene(rng: &mut Rng) -> Box<Hitable> {
     let mut list: Vec<Box<Hitable>> = Vec::new();
@@ -122,7 +130,8 @@ fn main() {
                           1.0);
     // let world = random_scene(&mut rng);
     // let world = two_spheres(&mut rng);
-    let world = two_perlin_spheres(&mut rng);
+    // let world = two_perlin_spheres(&mut rng);
+    let world = earth();
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let mut col = Vec3::<f64>::zero();

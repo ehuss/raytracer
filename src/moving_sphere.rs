@@ -56,6 +56,7 @@ impl Hitable for MovingSphere {
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
                 let h = HitRecord::new(temp,
+                                       0., 0., // XXX: Support UV
                                        p,
                                        (p - self.center(r.time())) / self.radius,
                                        self.material.clone());
@@ -65,6 +66,7 @@ impl Hitable for MovingSphere {
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
                 let h = HitRecord::new(temp,
+                                       0., 0., // XXX: Support UV
                                        p,
                                        (p - self.center(r.time())) / self.radius,
                                        self.material.clone());

@@ -4,6 +4,7 @@ use hitable::*;
 use material::*;
 use util::*;
 use aabb::*;
+use std::f64::consts::*;
 
 #[derive(Debug)]
 pub struct Sphere {
@@ -33,7 +34,9 @@ impl Hitable for Sphere {
             let temp = (-b - discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
+                let (u, v) = get_sphere_uv(&((p-self.center)/self.radius));
                 let h = HitRecord::new(temp,
+                                       u, v,
                                        p,
                                        (p - self.center) / self.radius,
                                        self.material.clone());
@@ -42,7 +45,9 @@ impl Hitable for Sphere {
             let temp = (-b + discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
+                let (u, v) = get_sphere_uv(&((p-self.center)/self.radius));
                 let h = HitRecord::new(temp,
+                                       u, v,
                                        p,
                                        (p - self.center) / self.radius,
                                        self.material.clone());
@@ -56,4 +61,12 @@ impl Hitable for Sphere {
         Some(AABB::new(self.center - Vec3::new(self.radius, self.radius, self.radius),
                        self.center + Vec3::new(self.radius, self.radius, self.radius)))
     }
+}
+
+fn get_sphere_uv(p: &Vec3<f64>) -> (f64, f64) {
+    let phi = p.z.atan2(p.x);
+    let theta = p.y.asin();
+    let u = 1.-(phi + PI) / (2.*PI);
+    let v = (theta + PI/2.) / PI;
+    return (u,v);
 }

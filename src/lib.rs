@@ -1,5 +1,6 @@
 extern crate num_traits;
 extern crate rand;
+extern crate image;
 
 pub mod vec3;
 pub mod ray;

@@ -64,7 +64,7 @@ impl Material for Lambertian {
                -> Option<(Ray<f64>, Vec3<f64>)> {
         let target = rec.p + rec.normal + random_in_unit_sphere(rng);
         let scattered = Ray::new_time(rec.p, target - rec.p, r_in.time());
-        let attenuation = self.albedo.value(0., 0., &rec.p);
+        let attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
         Some((scattered, attenuation))
     }
 }

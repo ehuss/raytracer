@@ -9,6 +9,10 @@ use aabb::*;
 pub struct HitRecord {
     /// Point along ray.
     pub t: f64,
+    /// Surface UV.
+    pub u: f64,
+    /// Surface UV.
+    pub v: f64,
     /// Hit location.
     pub p: Vec3<f64>,
     /// Normal vector from surface.
@@ -18,9 +22,11 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    pub fn new(t: f64, p: Vec3<f64>, normal: Vec3<f64>, m: Rc<Material>) -> HitRecord {
+    pub fn new(t: f64, u: f64, v: f64, p: Vec3<f64>, normal: Vec3<f64>, m: Rc<Material>) -> HitRecord {
         HitRecord {
             t: t,
+            u: u,
+            v: v,
             p: p,
             normal: normal,
             material: m,
