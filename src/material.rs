@@ -3,6 +3,7 @@ use hitable::*;
 use vec3::*;
 use util::*;
 use texture::*;
+use std::f64::consts::PI;
 
 /// Reflect a vector from a surface.
 /// v is the incoming vector, n is the normal of the surface.
@@ -35,15 +36,21 @@ fn schlick(cosine: f64, ref_idx: f64) -> f64 {
 }
 
 pub trait Material: fmt::Debug {
-    /// Return is (scattered, attenuation) where scattered is the direction
-    /// the ray should scatter in.  Attenuation is the attenuation of the
-    /// color.  Return None if there is no scatter.
+    /// Return is (scattered, abledo, pdf) where scattered is the direction
+    /// the ray should scatter in.  Albedo is the attenuation of the
+    /// color.  pdf is f64.  Return None if there is no scatter.
+    #[allow(unused)]
     fn scatter(&self,
                rng: &mut Rng,
                r_in: &Ray<f64>,
                rec: &HitRecord)
-               -> Option<(Ray<f64>, Vec3<f64>)>;
+               -> Option<(Ray<f64>, Vec3<f64>, f64)> {
+        None
+    }
 
+    fn scattering_pdf(&self, r_in: &Ray<f64>, rec: &HitRecord, scattered: &Ray<f64>) -> f64 {
+        0.
+    }
 
     #[allow(unused)]
     fn emitted(&self, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64> {
@@ -67,12 +74,21 @@ impl Material for Lambertian {
                rng: &mut Rng,
                r_in: &Ray<f64>,
                rec: &HitRecord)
-               -> Option<(Ray<f64>, Vec3<f64>)> {
+               -> Option<(Ray<f64>, Vec3<f64>, f64)> {
         let target = rec.p + rec.normal + random_in_unit_sphere(rng);
         let scattered = Ray::new_time(rec.p, target - rec.p, r_in.time());
-        let attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
-        Some((scattered, attenuation))
+        let alb = self.albedo.value(rec.u, rec.v, &rec.p);
+        let pdf = dot(&rec.normal, &scattered.direction()) / PI;
+        Some((scattered, alb, pdf))
     }
+    fn scattering_pdf(&self, r_in: &Ray<f64>, rec: &HitRecord, scattered: &Ray<f64>) -> f64 {
+        let cosine = dot(&rec.normal, &scattered.direction().unit_vector());
+        if cosine < 0. {
+            return 0.;
+        }
+        return cosine / PI;
+    }
+
 }
 
 /// Get a random point on a unit sphere.
@@ -112,13 +128,13 @@ impl Material for Metal {
                rng: &mut Rng,
                r_in: &Ray<f64>,
                rec: &HitRecord)
-               -> Option<(Ray<f64>, Vec3<f64>)> {
+               -> Option<(Ray<f64>, Vec3<f64>, f64)> {
         let reflected = reflect(&r_in.direction().unit_vector(), &rec.normal);
         // Randomly adjust the reflection to create a rougher surface.
         let scattered = Ray::new(rec.p, reflected + self.fuzz * random_in_unit_sphere(rng));
         // Limit scatter rays to those that are <90° from the normal.
         if dot(&scattered.direction(), &rec.normal) > 0.0 {
-            return Some((scattered, self.albedo));
+            return Some((scattered, self.albedo, 0.));
         } else {
             return None;
         }
@@ -143,7 +159,7 @@ impl Material for Dielectric {
                rng: &mut Rng,
                r_in: &Ray<f64>,
                rec: &HitRecord)
-               -> Option<(Ray<f64>, Vec3<f64>)> {
+               -> Option<(Ray<f64>, Vec3<f64>, f64)> {
         let reflected = reflect(&r_in.direction(), &rec.normal);
         let outward_normal;
         let ni_over_nt;
@@ -172,7 +188,7 @@ impl Material for Dielectric {
             scattered = Ray::new(rec.p, refracted.unwrap());
         }
         let attenuation = Vec3::new(1.0, 1.0, 1.0);
-        return Some((scattered, attenuation));
+        return Some((scattered, attenuation, 0.));
     }
 }
 
@@ -183,14 +199,6 @@ pub struct DiffuseLight {
 
 
 impl Material for DiffuseLight {
-    #[allow(unused)]
-    fn scatter(&self,
-               rng: &mut Rng,
-               r_in: &Ray<f64>,
-               rec: &HitRecord)
-               -> Option<(Ray<f64>, Vec3<f64>)> {
-        None
-    }
 
     fn emitted(&self, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64> {
         self.emit.value(u, v, p)
@@ -208,9 +216,9 @@ impl Material for Isotropic {
                rng: &mut Rng,
                r_in: &Ray<f64>,
                rec: &HitRecord)
-               -> Option<(Ray<f64>, Vec3<f64>)> {
+               -> Option<(Ray<f64>, Vec3<f64>, f64)> {
         let scattered = Ray::new(rec.p, random_in_unit_sphere(rng));
         let attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
-        return Some((scattered, attenuation));
+        return Some((scattered, attenuation, 0.));
     }
 }

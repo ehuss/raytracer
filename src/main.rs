@@ -14,8 +14,8 @@ fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f
     if let Some(h) = world.hit(rng, r, 0.0001, std::f64::MAX) {
         let emitted = h.material.emitted(h.u, h.v, &h.p);
         if depth < 50 {
-            if let Some((scattered, attenuation)) = h.material.scatter(rng, r, &h) {
-                return emitted + attenuation * color(rng, &scattered, world, depth + 1);
+            if let Some((scattered, albedo, pdf)) = h.material.scatter(rng, r, &h) {
+                return emitted + albedo * h.material.scattering_pdf(r, &h, &scattered)*color(rng, &scattered, world, depth + 1) / pdf;
             } else {
                 return emitted;
             }
@@ -235,7 +235,8 @@ fn main() {
     // let world = random_scene(&mut rng);
     // let world = two_spheres(&mut rng);
     // let world = two_perlin_spheres(&mut rng);
-    let world = final_scene();
+    // let world = final_scene();
+    let world = cornell_box();
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let mut col = Vec3::<f64>::zero();
