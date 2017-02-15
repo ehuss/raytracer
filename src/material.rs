@@ -3,7 +3,8 @@ use hitable::*;
 use vec3::*;
 use util::*;
 use texture::*;
-use std::f64::consts::PI;
+use onb::*;
+use pdf::*;
 
 /// Reflect a vector from a surface.
 /// v is the incoming vector, n is the normal of the surface.
@@ -75,11 +76,13 @@ impl Material for Lambertian {
                r_in: &Ray<f64>,
                rec: &HitRecord)
                -> Option<(Ray<f64>, Vec3<f64>, f64)> {
-        let target = rec.p + rec.normal + random_in_unit_sphere(rng);
-        let scattered = Ray::new_time(rec.p, target - rec.p, r_in.time());
+        let mut uvw = Onb::new();
+        uvw.build_from_w(&rec.normal);
+        let direction = uvw.local_vec(&random_cosine_direction(rng));
+        let scattered = Ray::new_time(rec.p, direction.unit_vector(), r_in.time());
         let alb = self.albedo.value(rec.u, rec.v, &rec.p);
-        let pdf = dot(&rec.normal, &scattered.direction()) / PI;
-        Some((scattered, alb, pdf))
+        let pdf = dot(&uvw.w(), &scattered.direction()) / PI;
+        return Some((scattered, alb, pdf));
     }
     fn scattering_pdf(&self, r_in: &Ray<f64>, rec: &HitRecord, scattered: &Ray<f64>) -> f64 {
         let cosine = dot(&rec.normal, &scattered.direction().unit_vector());

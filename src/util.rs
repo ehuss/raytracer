@@ -2,6 +2,8 @@ use rand;
 use rand::Rng as R;
 pub use std::rc::Rc;
 pub use std::fmt;
+pub use std::f64::consts::PI;
+
 
 pub struct Rng {
     rng: rand::XorShiftRng,

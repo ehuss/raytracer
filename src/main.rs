@@ -215,7 +215,7 @@ fn final_scene() -> Box<Hitable> {
 fn main() {
     let nx = 400;
     let ny = 200;
-    let ns = 1000;
+    let ns = 100;
     perlin_init();
     println!("P3\n{} {}\n255", nx, ny);
     let mut rng = Rng::new();

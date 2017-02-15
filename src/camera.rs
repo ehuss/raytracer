@@ -1,7 +1,6 @@
 use vec3::*;
 use ray::*;
 use util::*;
-use std::f64::consts;
 
 fn random_in_unit_disk(rng: &mut Rng) -> Vec3<f64> {
     loop {
@@ -38,7 +37,7 @@ impl Camera {
                t0: f64,
                t1: f64)
                -> Camera {
-        let theta = vfov * consts::PI / 180.0;
+        let theta = vfov * PI / 180.0;
         let half_height = (theta / 2.0).tan();
         let half_width = aspect * half_height;
         let w = (lookfrom - lookat).unit_vector();

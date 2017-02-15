@@ -4,7 +4,6 @@ use hitable::*;
 use material::*;
 use util::*;
 use aabb::*;
-use std::f64::consts::*;
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
