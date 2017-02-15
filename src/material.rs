@@ -76,8 +76,7 @@ impl Material for Lambertian {
                r_in: &Ray<f64>,
                rec: &HitRecord)
                -> Option<(Ray<f64>, Vec3<f64>, f64)> {
-        let mut uvw = Onb::new();
-        uvw.build_from_w(&rec.normal);
+        let uvw = Onb::new_from_w(&rec.normal);
         let direction = uvw.local_vec(&random_cosine_direction(rng));
         let scattered = Ray::new_time(rec.p, direction.unit_vector(), r_in.time());
         let alb = self.albedo.value(rec.u, rec.v, &rec.p);

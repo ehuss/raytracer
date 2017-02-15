@@ -3,7 +3,6 @@ use ray::Ray;
 use material::Material;
 use util::*;
 use aabb::*;
-use std::f64;
 
 /// A ray hit on a surface.
 #[derive(Debug, Clone, new)]
@@ -36,6 +35,9 @@ pub trait Hitable: fmt::Debug {
     /// Returns None if there is no valid bounding box (like an infinite
     /// plane).
     fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB>;
+
+    fn pdf_value(&self, rng: &mut Rng, o: &Vec3<f64>, v: &Vec3<f64>) -> f64 { 0. }
+    fn random(&self, rng: &mut Rng, o: &Vec3<f64>) -> Vec3<f64> { Vec3::new(1., 0., 0.) }
 }
 
 #[derive(Debug, new)]

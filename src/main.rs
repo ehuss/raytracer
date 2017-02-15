@@ -11,25 +11,20 @@ use raytracer::*;
 fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f64> {
     // Use 0.0001 to ignore hits very near zero (the ray should travel at
     // least some distance).
-    if let Some(h) = world.hit(rng, r, 0.0001, std::f64::MAX) {
+    if let Some(h) = world.hit(rng, r, 0.0001, f64::MAX) {
         let emitted = h.material.emitted(r, &h, h.u, h.v, &h.p);
         if depth < 50 {
             if let Some((scattered, albedo, pdf)) = h.material.scatter(rng, r, &h) {
-                let on_light = Vec3::new(213.+rng.rand64()*(343.-213.), 554., 227.+rng.rand64()*(332.-227.));
-                let mut to_light = on_light - h.p;
-                let distance_squared = to_light.squared_length();
-                to_light.make_unit_vector();
-                if dot(&to_light, &h.normal) < 0. {
-                    return emitted;
-                }
-                let light_area = (343.-213.)*(332.-227.);
-                let light_cosine = to_light.y.abs();
-                if light_cosine < 0.000001 {
-                    return emitted;
-                }
-                let pdf = distance_squared / (light_cosine * light_area);
-                let scattered = Ray::new_time(h.p, to_light, r.time());
-                return emitted + albedo * h.material.scattering_pdf(r, &h, &scattered)*color(rng, &scattered, world, depth + 1) / pdf;
+                // let p = CosinePdf::new(&h.normal);
+                let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
+                let light_shape = XZRect::new(213., 343., 227., 332., 554., red);
+                let p0 = HitablePdf::new(h.p, Box::new(light_shape));
+                let p1 = CosinePdf::new(&h.normal);
+                let p = MixturePdf::new(Box::new(p0), Box::new(p1));
+                let scattered = Ray::new_time(h.p, p.generate(rng), r.time());
+                let pdf_val = p.value(rng, &scattered.direction());
+                return emitted + albedo * h.material.scattering_pdf(r, &h, &scattered)*
+                    color(rng, &scattered, world, depth + 1) / pdf_val;
             } else {
                 return emitted;
             }
@@ -92,7 +87,7 @@ fn cornell_box() -> Box<Hitable> {
     let light = Rc::new(DiffuseLight::new(Box::new(ConstantTexture::new(Vec3::new(15., 15., 15.)))));
     list.add_hitable(FlipNormals::new(Box::new(YZRect::new(0., 555., 0., 555., 555., green.clone()))));
     list.add_hitable(YZRect::new(0., 555., 0., 555., 0., red.clone()));
-    list.add_hitable(XZRect::new(213., 343., 227., 332., 554., light.clone()));
+    list.add_hitable(FlipNormals::new(Box::new(XZRect::new(213., 343., 227., 332., 554., light.clone()))));
     list.add_hitable(FlipNormals::new(Box::new(XZRect::new(0., 555., 0., 555., 555., white.clone()))));
     list.add_hitable(XZRect::new(0., 555., 0., 555., 0., white.clone()));
     list.add_hitable(FlipNormals::new(Box::new(XYRect::new(0., 555., 0., 555., 555., white.clone()))));

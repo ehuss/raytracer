@@ -73,6 +73,20 @@ impl Hitable for XZRect {
         Some(AABB::new(Vec3::new(self.x0, self.k-0.0001, self.z0),
                        Vec3::new(self.x1, self.k+0.0001, self.z1)))
     }
+    fn pdf_value(&self, rng: &mut Rng, o: &Vec3<f64>, v: &Vec3<f64>) -> f64 {
+        if let Some(rec) = self.hit(rng, &Ray::new(o.clone(), v.clone()), 0.001, f64::MAX) {
+            let area = (self.x1-self.x0)*(self.z1-self.z0);
+            let distance_squared = rec.t*rec.t*v.squared_length();
+            let cosine = dot(v, &rec.normal).abs() / v.length();
+            return distance_squared / (cosine * area);
+        } else {
+            return 0.;
+        }
+    }
+    fn random(&self, rng: &mut Rng, o: &Vec3<f64>) -> Vec3<f64> {
+        let random_point = Vec3::new(self.x0 + rng.rand64()*(self.x1-self.x0), self.k, self.z0 + rng.rand64()*(self.z1-self.z0));
+        return random_point - *o;
+    }
 }
 
 #[derive(Debug, new)]

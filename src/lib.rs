@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 extern crate num_traits;
 extern crate rand;
 extern crate image;
