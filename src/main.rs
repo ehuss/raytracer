@@ -12,9 +12,23 @@ fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f
     // Use 0.0001 to ignore hits very near zero (the ray should travel at
     // least some distance).
     if let Some(h) = world.hit(rng, r, 0.0001, std::f64::MAX) {
-        let emitted = h.material.emitted(h.u, h.v, &h.p);
+        let emitted = h.material.emitted(r, &h, h.u, h.v, &h.p);
         if depth < 50 {
             if let Some((scattered, albedo, pdf)) = h.material.scatter(rng, r, &h) {
+                let on_light = Vec3::new(213.+rng.rand64()*(343.-213.), 554., 227.+rng.rand64()*(332.-227.));
+                let mut to_light = on_light - h.p;
+                let distance_squared = to_light.squared_length();
+                to_light.make_unit_vector();
+                if dot(&to_light, &h.normal) < 0. {
+                    return emitted;
+                }
+                let light_area = (343.-213.)*(332.-227.);
+                let light_cosine = to_light.y.abs();
+                if light_cosine < 0.000001 {
+                    return emitted;
+                }
+                let pdf = distance_squared / (light_cosine * light_area);
+                let scattered = Ray::new_time(h.p, to_light, r.time());
                 return emitted + albedo * h.material.scattering_pdf(r, &h, &scattered)*color(rng, &scattered, world, depth + 1) / pdf;
             } else {
                 return emitted;

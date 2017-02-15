@@ -54,7 +54,7 @@ pub trait Material: fmt::Debug {
     }
 
     #[allow(unused)]
-    fn emitted(&self, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64> {
+    fn emitted(&self, r_in: &Ray<f64>, rec: &HitRecord, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64> {
         Vec3::zero()
     }
 }
@@ -203,8 +203,13 @@ pub struct DiffuseLight {
 
 impl Material for DiffuseLight {
 
-    fn emitted(&self, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64> {
-        self.emit.value(u, v, p)
+    fn emitted(&self, r_in: &Ray<f64>, rec: &HitRecord, u: f64, v: f64, p: &Vec3<f64>) -> Vec3<f64> {
+        // Only emit in one direction.
+        if dot(&rec.normal, &r_in.direction()) < 0. {
+            return self.emit.value(u, v, p);
+        } else {
+            return Vec3::zero();
+        }
     }
 }
 
