@@ -6,7 +6,7 @@ use util::*;
 use aabb::*;
 use std::f64::consts::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sphere {
     center: Vec3<f64>,
     radius: f64,

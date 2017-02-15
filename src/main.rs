@@ -163,6 +163,50 @@ fn random_scene(rng: &mut Rng) -> Box<Hitable> {
     return Box::new(bvh);
 }
 
+fn final_scene() -> Box<Hitable> {
+    let mut rng = Rng::new();
+    let num_boxes = 20u8;
+    let mut list = HitableList::new();
+    let mut boxlist: Vec<Box<Hitable>> = Vec::new();
+    let mut boxlist2: Vec<Box<Hitable>> = Vec::new();
+    let white = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73)))));
+    let ground = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.48, 0.83, 0.53)))));
+    for i in 0..num_boxes {
+        for j in 0..num_boxes {
+            let w = 100.;
+            let x0 = -1000. + i as f64*w;
+            let z0 = -1000. + j as f64*w;
+            let y0 = 0.;
+            let x1 = x0 + w;
+            let y1 = 100.*(rng.rand64() + 0.01);
+            let z1 = z0 + w;
+            let b = HBox::new(Vec3::new(x0, y0, z0), Vec3::new(x1, y1, x1), ground.clone());
+            boxlist.push(Box::new(b));
+        }
+    }
+    list.add_hitable(BVHNode::new(&mut rng, boxlist, 0., 1.));
+    let light = Rc::new(DiffuseLight::new(Box::new(ConstantTexture::new(Vec3::new(7., 7., 7.)))));
+    list.add_hitable(XZRect::new(123., 432., 147., 412., 554., light.clone()));
+    let center = Vec3::new(400., 400., 200.);
+    list.add_hitable(MovingSphere::new(center, center+Vec3::new(30., 0., 0.), 0., 1., 50., Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.7, 0.3, 0.1)))))));
+    list.add_hitable(Sphere::new(Vec3::new(260., 150., 45.), 50., Rc::new(Dielectric::new(1.5))));
+    list.add_hitable(Sphere::new(Vec3::new(0., 150., 145.), 50., Rc::new(Metal::new(Vec3::new(0.8, 0.8, 0.9), 10.))));
+    let boundary = Sphere::new(Vec3::new(360., 150., 145.), 70., Rc::new(Dielectric::new(1.5)));
+    let boundary2 = boundary.clone();
+    list.add_hitable(boundary);
+    list.add_hitable(ConstantMedium::new(Box::new(boundary2), 0.2, Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.9)))));
+    let boundary = Sphere::new(Vec3::zero(), 5000., Rc::new(Dielectric::new(1.5)));
+    let img = image::open("earthmap1k.jpg").unwrap();
+    let emat = Lambertian::new(Box::new(ImageTexture::new(img)));
+    list.add_hitable(Sphere::new(Vec3::new(400., 200., 400.), 100., Rc::new(emat)));
+    let pertext = NoiseTexture::new(0.1);
+    list.add_hitable(Sphere::new(Vec3::new(220., 280., 300.), 80., Rc::new(Lambertian::new(Box::new(pertext)))));
+    for j in 0..1000 {
+        boxlist2.push(Box::new(Sphere::new(Vec3::new(165.*rng.rand64(), 165.*rng.rand64(), 165.*rng.rand64()), 10., white.clone())));
+    }
+    list.add_hitable(Translate::new(Box::new(RotateY::new(Box::new(BVHNode::new(&mut rng, boxlist2, 0., 1.)), 15.)), Vec3::new(-100., 270., 395.)));
+    return Box::new(list);
+}
 
 // y-up
 // into screen is -z
@@ -171,7 +215,7 @@ fn random_scene(rng: &mut Rng) -> Box<Hitable> {
 fn main() {
     let nx = 400;
     let ny = 200;
-    let ns = 100;
+    let ns = 1000;
     perlin_init();
     println!("P3\n{} {}\n255", nx, ny);
     let mut rng = Rng::new();
@@ -191,7 +235,7 @@ fn main() {
     // let world = random_scene(&mut rng);
     // let world = two_spheres(&mut rng);
     // let world = two_perlin_spheres(&mut rng);
-    let world = cornell_smoke();
+    let world = final_scene();
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let mut col = Vec3::<f64>::zero();
