@@ -5,31 +5,40 @@ extern crate image;
 
 use raytracer::*;
 
+#[inline(always)]
+fn de_nan(c: &Vec3<f64>) -> Vec3<f64> {
+    let x = if c.x.is_nan() {0.} else {c.x};
+    let y = if c.y.is_nan() {0.} else {c.y};
+    let z = if c.z.is_nan() {0.} else {c.z};
+    return Vec3::new(x, y, z);
+}
+
 /// Get color for ray r cast into scene.
 ///
 /// A miss into the background is a linear gradient from white to blue.
-fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f64> {
+fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, light_shape: &Hitable, depth: u8) -> Vec3<f64> {
     // Use 0.0001 to ignore hits very near zero (the ray should travel at
     // least some distance).
-    if let Some(h) = world.hit(rng, r, 0.0001, f64::MAX) {
-        let emitted = h.material.emitted(r, &h, h.u, h.v, &h.p);
+    if let Some(hrec) = world.hit(rng, r, 0.0001, f64::MAX) {
+        let emitted = hrec.material.emitted(r, &hrec, hrec.u, hrec.v, &hrec.p);
         if depth < 50 {
-            if let Some((scattered, albedo, pdf)) = h.material.scatter(rng, r, &h) {
-                // let p = CosinePdf::new(&h.normal);
-                let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
-                let light_shape = XZRect::new(213., 343., 227., 332., 554., red);
-                let p0 = HitablePdf::new(h.p, Box::new(light_shape));
-                let p1 = CosinePdf::new(&h.normal);
-                let p = MixturePdf::new(Box::new(p0), Box::new(p1));
-                let scattered = Ray::new_time(h.p, p.generate(rng), r.time());
-                let pdf_val = p.value(rng, &scattered.direction());
-                return emitted + albedo * h.material.scattering_pdf(r, &h, &scattered)*
-                    color(rng, &scattered, world, depth + 1) / pdf_val;
+            if let Some(srec) = hrec.material.scatter(rng, r, &hrec) {
+                if let Some(specular_ray) = srec.specular_ray {
+                    return srec.attenuation * color(rng, &specular_ray, world, light_shape, depth+1);
+                } else {
+                    let plight = HitablePdf::new(hrec.p, light_shape);
+                    let spdf = srec.pdf.unwrap();
+                    let p = MixturePdf::new(&plight, &*spdf);
+                    let scattered = Ray::new_time(hrec.p, p.generate(rng), r.time());
+                    let pdf_val = p.value(rng, &scattered.direction());
+                    return emitted + srec.attenuation*hrec.material.scattering_pdf(r, &hrec, &scattered)*
+                        color(rng, &scattered, world, light_shape, depth + 1) / pdf_val;
+                }
             } else {
                 return emitted;
             }
         }
-        return Vec3::zero();
+        return emitted;
     } else {
         // Hit background.
         // let unit_direction = r.direction().unit_vector();
@@ -39,6 +48,7 @@ fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, depth: u8) -> Vec3<f
     }
 }
 
+/*
 fn two_spheres(rng: &mut Rng) -> Box<Hitable> {
     let checker = CheckerTexture::new(
         Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 0.1))),
@@ -78,6 +88,7 @@ fn simple_light() -> Box<Hitable> {
     list.add_hitable(XYRect::new(3., 5., 1., 3., -2., lit_mat.clone()));
     return Box::new(list);
 }
+*/
 
 fn cornell_box() -> Box<Hitable> {
     let mut list = HitableList::new();
@@ -91,14 +102,20 @@ fn cornell_box() -> Box<Hitable> {
     list.add_hitable(FlipNormals::new(Box::new(XZRect::new(0., 555., 0., 555., 555., white.clone()))));
     list.add_hitable(XZRect::new(0., 555., 0., 555., 0., white.clone()));
     list.add_hitable(FlipNormals::new(Box::new(XYRect::new(0., 555., 0., 555., 555., white.clone()))));
-    let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 165., 165.), white.clone()));
-    list.add_hitable(Translate::new(Box::new(
-        RotateY::new(b, -18.)), Vec3::new(130., 0., 65.)));
+
+    let glass = Rc::new(Dielectric::new(1.5));
+    list.add_hitable(Sphere::new(Vec3::new(190., 90., 190.), 90., glass));
+
+    // let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 165., 165.), white.clone()));
+    // list.add_hitable(Translate::new(Box::new(
+    //     RotateY::new(b, -18.)), Vec3::new(130., 0., 65.)));
+    // let aluminum = Rc::new(Metal::new(Vec3::new(0.8, 0.85, 0.88), 0.));
     let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 330., 165.), white.clone()));
     list.add_hitable(Translate::new(Box::new(RotateY::new(b, 15.)), Vec3::new(265., 0., 295.)));
     return Box::new(list);
 }
 
+/*
 fn cornell_smoke() -> Box<Hitable> {
     let mut list = HitableList::new();
     let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
@@ -121,8 +138,8 @@ fn cornell_smoke() -> Box<Hitable> {
     list.add_hitable(b);
     return Box::new(list);
 }
-
-
+*/
+/*
 fn random_scene(rng: &mut Rng) -> Box<Hitable> {
     let mut list: Vec<Box<Hitable>> = Vec::new();
     let checker = CheckerTexture::new(
@@ -171,7 +188,9 @@ fn random_scene(rng: &mut Rng) -> Box<Hitable> {
     let bvh = BVHNode::new(rng, list, 0.0, 1.0);
     return Box::new(bvh);
 }
+*/
 
+/*
 fn final_scene() -> Box<Hitable> {
     let mut rng = Rng::new();
     let num_boxes = 20u8;
@@ -216,15 +235,16 @@ fn final_scene() -> Box<Hitable> {
     list.add_hitable(Translate::new(Box::new(RotateY::new(Box::new(BVHNode::new(&mut rng, boxlist2, 0., 1.)), 15.)), Vec3::new(-100., 270., 395.)));
     return Box::new(list);
 }
+*/
 
 // y-up
 // into screen is -z
 // Traverse from lower-left corner (-2, -1) to upper-right +(+2,+2)
 
 fn main() {
-    let nx = 400;
-    let ny = 200;
-    let ns = 100;
+    let nx = 500;
+    let ny = 500;
+    let ns = 1000;
     perlin_init();
     println!("P3\n{} {}\n255", nx, ny);
     let mut rng = Rng::new();
@@ -246,6 +266,16 @@ fn main() {
     // let world = two_perlin_spheres(&mut rng);
     // let world = final_scene();
     let world = cornell_box();
+    // This really should be part of cornell_box.
+    // Use a temporary material, since this is only used for finding the
+    // light, and I don't want to muck with making material Optional.
+    let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
+    let light_shape = XZRect::new(213., 343., 227., 332., 554., red.clone());
+    let glass_sphere = Sphere::new(Vec3::new(190., 90., 90.), 90., red.clone());
+    let mut hlist = HitableList::new();
+    hlist.add_hitable(light_shape);
+    hlist.add_hitable(glass_sphere);
+
     for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let mut col = Vec3::<f64>::zero();
@@ -253,7 +283,8 @@ fn main() {
                 let u = (i as f64 + rng.rand64()) / nx as f64;
                 let v = (j as f64 + rng.rand64()) / ny as f64;
                 let r = cam.get_ray(&mut rng, u, v);
-                col += color(&mut rng, &r, &world, 0);
+
+                col += de_nan(&color(&mut rng, &r, &world, &hlist, 0));
             }
             col /= ns as f64;
             // Poor-man's gamma correction.

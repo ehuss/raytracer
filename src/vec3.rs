@@ -6,8 +6,7 @@ pub use num_traits::Zero;
 
 // TODO:
 // - Hash?
-//
-// ○ Index, IndexMut
+// - operators (add/sub/etc) with references to Vec3.
 //
 // • std::convert:
 // From/Into, AsRef/AsMut

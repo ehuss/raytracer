@@ -2,6 +2,7 @@ use hitable::*;
 use ray::Ray;
 use aabb::*;
 use util::*;
+use vec3::*;
 
 #[derive(Debug)]
 pub struct HitableList<'a> {
@@ -51,4 +52,20 @@ impl<'a> Hitable for HitableList<'a> {
             return None;
         }
     }
+
+    fn pdf_value(&self, rng: &mut Rng, o: &Vec3<f64>, v: &Vec3<f64>) -> f64 {
+        let weight = 1./self.list.len() as f64;
+        let mut sum = 0.;
+        for i in 0..self.list.len() {
+            sum += weight * self.list[i].pdf_value(rng, o, v);
+        }
+        return sum;
+    }
+
+    fn random(&self, rng: &mut Rng, o: &Vec3<f64>) -> Vec3<f64> {
+        let index = (rng.rand64() * self.list.len() as f64) as usize;
+        return self.list[index].random(rng, o);
+    }
+
 }
+

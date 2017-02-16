@@ -13,6 +13,17 @@ pub fn random_cosine_direction(rng: &mut Rng) -> Vec3<f64> {
     return Vec3::new(x,y,z);
 }
 
+#[inline]
+pub fn random_to_sphere(rng: &mut Rng, radius: f64, distance_squared: f64) -> Vec3<f64> {
+    let r1 = rng.rand64();
+    let r2 = rng.rand64();
+    let z = 1. + r2*((1.-radius*radius/distance_squared).sqrt() - 1.);
+    let phi = 2.*PI*r1;
+    let x = phi.cos() * (1.-z*z).sqrt();
+    let y = phi.sin() * (1.-z*z).sqrt();
+    return Vec3::new(x, y, z);
+}
+
 pub trait Pdf: fmt::Debug {
     fn value(&self, rng: &mut Rng, direction: &Vec3<f64>) -> f64;
     fn generate(&self, rng: &mut Rng) -> Vec3<f64>;
@@ -47,12 +58,12 @@ impl Pdf for CosinePdf {
 }
 
 #[derive(Debug, new)]
-pub struct HitablePdf {
+pub struct HitablePdf<'a> {
     o: Vec3<f64>,
-    hitable: Box<Hitable>,
+    hitable: &'a Hitable,
 }
 
-impl Pdf for HitablePdf {
+impl<'a> Pdf for HitablePdf<'a> {
     fn value(&self, rng: &mut Rng, direction: &Vec3<f64>) -> f64 {
         return self.hitable.pdf_value(rng, &self.o, direction);
     }
@@ -62,12 +73,12 @@ impl Pdf for HitablePdf {
 }
 
 #[derive(Debug, new)]
-pub struct MixturePdf {
-    pdf0: Box<Pdf>,
-    pdf1: Box<Pdf>,
+pub struct MixturePdf<'a, 'b> {
+    pdf0: &'a Pdf,
+    pdf1: &'b Pdf,
 }
 
-impl Pdf for MixturePdf {
+impl<'a, 'b> Pdf for MixturePdf<'a, 'b> {
     fn value(&self, rng: &mut Rng, direction: &Vec3<f64>) -> f64 {
         return 0.5 * self.pdf0.value(rng, direction) + 0.5 * self.pdf1.value(rng, direction);
     }
