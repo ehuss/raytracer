@@ -11,6 +11,7 @@ fn random_in_unit_disk(rng: &mut Rng) -> Vec3<f64> {
     }
 }
 
+#[derive(Debug)]
 pub struct Camera {
     origin: Vec3<f64>,
     lower_left_corner: Vec3<f64>,

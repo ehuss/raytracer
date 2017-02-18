@@ -24,6 +24,9 @@ pub mod hbox;
 // pub mod constant_medium;
 pub mod onb;
 pub mod pdf;
+pub mod core;
+pub mod scene;
+pub mod output;
 
 pub use vec3::*;
 pub use ray::*;
@@ -43,3 +46,6 @@ pub use hbox::*;
 // pub use constant_medium::*;
 pub use onb::*;
 pub use pdf::*;
+pub use scene::*;
+pub use output::*;
+pub use core::*;

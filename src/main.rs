@@ -5,48 +5,6 @@ extern crate image;
 
 use raytracer::*;
 
-#[inline(always)]
-fn de_nan(c: &Vec3<f64>) -> Vec3<f64> {
-    let x = if c.x.is_nan() {0.} else {c.x};
-    let y = if c.y.is_nan() {0.} else {c.y};
-    let z = if c.z.is_nan() {0.} else {c.z};
-    return Vec3::new(x, y, z);
-}
-
-/// Get color for ray r cast into scene.
-///
-/// A miss into the background is a linear gradient from white to blue.
-fn color(rng: &mut Rng, r: &Ray<f64>, world: &Box<Hitable>, light_shape: &Hitable, depth: u8) -> Vec3<f64> {
-    // Use 0.0001 to ignore hits very near zero (the ray should travel at
-    // least some distance).
-    if let Some(hrec) = world.hit(rng, r, 0.0001, f64::MAX) {
-        let emitted = hrec.material.emitted(r, &hrec, hrec.u, hrec.v, &hrec.p);
-        if depth < 50 {
-            if let Some(srec) = hrec.material.scatter(rng, r, &hrec) {
-                if let Some(specular_ray) = srec.specular_ray {
-                    return srec.attenuation * color(rng, &specular_ray, world, light_shape, depth+1);
-                } else {
-                    let plight = HitablePdf::new(hrec.p, light_shape);
-                    let spdf = srec.pdf.unwrap();
-                    let p = MixturePdf::new(&plight, &*spdf);
-                    let scattered = Ray::new_time(hrec.p, p.generate(rng), r.time());
-                    let pdf_val = p.value(rng, &scattered.direction());
-                    return emitted + srec.attenuation*hrec.material.scattering_pdf(r, &hrec, &scattered)*
-                        color(rng, &scattered, world, light_shape, depth + 1) / pdf_val;
-                }
-            } else {
-                return emitted;
-            }
-        }
-        return emitted;
-    } else {
-        // Hit background.
-        // let unit_direction = r.direction().unit_vector();
-        // let t = 0.5 * (unit_direction.y + 1.0);
-        // return (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0);
-        return Vec3::zero();
-    }
-}
 
 /*
 fn two_spheres(rng: &mut Rng) -> Box<Hitable> {
@@ -90,7 +48,7 @@ fn simple_light() -> Box<Hitable> {
 }
 */
 
-fn cornell_box() -> Box<Hitable> {
+fn cornell_box() -> Scene {
     let mut list = HitableList::new();
     let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
     let white = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73)))));
@@ -112,7 +70,50 @@ fn cornell_box() -> Box<Hitable> {
     // let aluminum = Rc::new(Metal::new(Vec3::new(0.8, 0.85, 0.88), 0.));
     let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 330., 165.), white.clone()));
     list.add_hitable(Translate::new(Box::new(RotateY::new(b, 15.)), Vec3::new(265., 0., 295.)));
-    return Box::new(list);
+
+
+    // XXX: This should be a copy or reference.
+    // Use a temporary material, since this is only used for finding the
+    // light, and I don't want to muck with making material Optional.
+    let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
+    let light_shape = XZRect::new(213., 343., 227., 332., 554., red.clone());
+    let glass_sphere = Sphere::new(Vec3::new(190., 90., 90.), 90., red.clone());
+    let mut light_shapes = HitableList::new();
+    light_shapes.add_hitable(light_shape);
+    light_shapes.add_hitable(glass_sphere);
+
+
+    let lookfrom = Vec3::new(278., 278., -800.);
+    let lookat = Vec3::new(278., 278., 0.);
+    let dist_to_focus = 10.0;//(lookfrom-lookat).length();
+    let aperture = 0.0;
+    let nx = 500;
+    let ny = 500;
+    let camera = Camera::new(lookfrom,
+                             lookat,
+                             Vec3::new(0.0, 1.0, 0.0),
+                             40.0,
+                             nx as f64 / ny as f64,
+                             aperture,
+                             dist_to_focus,
+                             0.0,
+                             1.0);
+
+
+    let output = OutputSettings {
+        format: OutputFormat::Png,
+        filename_template: String::from("output.png"),
+        width: nx,
+        height: ny,
+    };
+
+    return Scene {
+        world: Box::new(list),
+        light_shapes: Box::new(light_shapes),
+        camera: camera,
+        output_settings: output,
+        num_samples: 10,
+    }
 }
 
 /*
@@ -237,62 +238,11 @@ fn final_scene() -> Box<Hitable> {
 }
 */
 
-// y-up
+// y-up, x is right (right handed coordinate system)
 // into screen is -z
-// Traverse from lower-left corner (-2, -1) to upper-right +(+2,+2)
 
 fn main() {
-    let nx = 500;
-    let ny = 500;
-    let ns = 1000;
-    perlin_init();
-    println!("P3\n{} {}\n255", nx, ny);
-    let mut rng = Rng::new();
-    let lookfrom = Vec3::new(278., 278., -800.);
-    let lookat = Vec3::new(278., 278., 0.);
-    let dist_to_focus = 10.0;//(lookfrom-lookat).length();
-    let aperture = 0.0;
-    let cam = Camera::new(lookfrom,
-                          lookat,
-                          Vec3::new(0.0, 1.0, 0.0),
-                          40.0,
-                          nx as f64 / ny as f64,
-                          aperture,
-                          dist_to_focus,
-                          0.0,
-                          1.0);
-    // let world = random_scene(&mut rng);
-    // let world = two_spheres(&mut rng);
-    // let world = two_perlin_spheres(&mut rng);
-    // let world = final_scene();
-    let world = cornell_box();
-    // This really should be part of cornell_box.
-    // Use a temporary material, since this is only used for finding the
-    // light, and I don't want to muck with making material Optional.
-    let red = Rc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05)))));
-    let light_shape = XZRect::new(213., 343., 227., 332., 554., red.clone());
-    let glass_sphere = Sphere::new(Vec3::new(190., 90., 90.), 90., red.clone());
-    let mut hlist = HitableList::new();
-    hlist.add_hitable(light_shape);
-    hlist.add_hitable(glass_sphere);
-
-    for j in (0..ny - 1).rev() {
-        for i in 0..nx {
-            let mut col = Vec3::<f64>::zero();
-            for _ in 0..ns {
-                let u = (i as f64 + rng.rand64()) / nx as f64;
-                let v = (j as f64 + rng.rand64()) / ny as f64;
-                let r = cam.get_ray(&mut rng, u, v);
-
-                col += de_nan(&color(&mut rng, &r, &world, &hlist, 0));
-            }
-            col /= ns as f64;
-            // Poor-man's gamma correction.
-            col = Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt());
-            let ir = (255.99 * col.x) as u32;
-            let ig = (255.99 * col.y) as u32;
-            let ib = (255.99 * col.z) as u32;
-            println!("{} {} {}", ir, ig, ib);
-        }
-    }
+    let scene = cornell_box();
+    let mut output = new_output(&scene.output_settings, &scene).unwrap();
+    render(&scene, &scene.output_settings, &mut output);
 }
