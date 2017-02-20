@@ -58,23 +58,50 @@ pub fn render(scene: &Scene, output_settings: &OutputSettings, output: &mut Box<
     let width = output_settings.width;
     let height = output_settings.height;
     let ns = scene.num_samples;
+    let buckets = output::create_buckets(width, height, output::BucketStrategy::Spiral, 64, 64);
+    for bucket in buckets {
+        output.begin_bucket(&bucket)?;
+        render_bucket(&mut rng, scene, output, ns, width, height, bucket)?;
+    }
 
-    for j in 0..height {
-        for i in 0..width {
+    output.end()?;
+    Ok(())
+}
+
+fn render_bucket(rng: &mut Rng,
+                 scene: &Scene,
+                 output: &mut Box<Output>,
+                 ns: u32,
+                 width: u32,
+                 height: u32,
+                 bucket: output::Bucket)
+                 -> output::Result<()>
+{
+    let mut pixels = Vec::with_capacity(bucket.height as usize);
+    for bucket_j in 0..bucket.height {
+        let mut pixel_row = Vec::with_capacity(bucket.width as usize);
+        // Reverse since camera rays go from bottom-left corner, but
+        // the output API sets the origin the upper-left corner.
+        let j = height - (bucket_j + bucket.y);
+        for bucket_i in 0..bucket.width {
+            let i = bucket_i + bucket.x;
             let mut col = Vec3::<f64>::zero();
             for _ in 0..ns {
                 let u = (i as f64 + rng.rand64()) / width as f64;
                 let v = (j as f64 + rng.rand64()) / height as f64;
-                let r = scene.camera.get_ray(&mut rng, u, v);
+                let r = scene.camera.get_ray(rng, u, v);
 
-                col += de_nan(&color(&mut rng, &r, scene, 0));
+                col += de_nan(&color(rng, &r, scene, 0));
             }
             col /= ns as f64;
             // Poor-man's gamma correction.
             col = Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt());
-            output.put_pixel(i, height-j-1, &col)?;
+            pixel_row.push(col);
+            // output.put_pixel(i, height-j-1, &col)?;
         }
+        pixels.push(pixel_row);
     }
-    output.end()?;
+    output.put_bucket(&bucket, &pixels)?;
+
     Ok(())
 }

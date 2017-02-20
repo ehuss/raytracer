@@ -1,30 +1,26 @@
-use std::{self, io, fmt};
+use std::{self, fmt};
+use std::error::Error as std_Error;
+
+pub type GenericError = Box<std::error::Error>;
+pub type Result<T> = std::result::Result<T, GenericError>;
 
 #[derive(Debug)]
 pub enum Error {
-    IoError(io::Error),
+    UnsupportedImageFormat,
+    ExitRequested
 }
 
-impl std::error::Error for Error {
+impl std_Error for Error {
     fn description(&self) -> &str {
         match *self {
-            Error::IoError(ref e) => e.description(),
+            Error::UnsupportedImageFormat => "Unsupported file format",
+            Error::ExitRequested => "Exit Requested",
         }
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::IoError(ref e) => e.fmt(fmt),
-        }
+        write!(fmt, "Output Error: {}", self.description())
     }
 }
-
-impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Error {
-        Error::IoError(e)
-    }
-}
-
-pub type Result<T> = std::result::Result<T, Error>;

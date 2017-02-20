@@ -13,10 +13,15 @@ fn random_in_unit_disk(rng: &mut Rng) -> Vec3<f64> {
 
 #[derive(Debug)]
 pub struct Camera {
+    /// Position of the camera.
     origin: Vec3<f64>,
+    /// Lower-left corner of the focus plane in world coordinates.
     lower_left_corner: Vec3<f64>,
+    /// Vector going horizontally (left-to-right) across the focus plane.
     horizontal: Vec3<f64>,
+    /// Vector going vertically (bottom-to-top) across the focus plane.
     vertical: Vec3<f64>,
+    /// ONB for the camera.
     u: Vec3<f64>,
     v: Vec3<f64>,
     w: Vec3<f64>,
@@ -44,14 +49,17 @@ impl Camera {
         let w = (lookfrom - lookat).unit_vector();
         let u = cross(&vup, &w).unit_vector();
         let v = cross(&w, &u);
+        let lower_left_corner = lookfrom - half_width * focus_dist * u -
+                                half_height * focus_dist * v -
+                                focus_dist * w;
+        let horizontal = 2.0 * half_width * focus_dist * u;
+        let vertical = 2.0 * half_height * focus_dist * v;
 
         Camera {
             origin: lookfrom,
-            lower_left_corner: lookfrom - half_width * focus_dist * u -
-                               half_height * focus_dist * v -
-                               focus_dist * w,
-            horizontal: 2.0 * half_width * focus_dist * u,
-            vertical: 2.0 * half_height * focus_dist * v,
+            lower_left_corner: lower_left_corner,
+            horizontal: horizontal,
+            vertical: vertical,
             u: u,
             v: v,
             w: w,

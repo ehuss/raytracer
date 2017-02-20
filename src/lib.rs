@@ -5,6 +5,9 @@ extern crate rand;
 extern crate image;
 #[macro_use]
 extern crate derive_new;
+#[cfg(feature="gui")]
+extern crate minifb;
+
 
 pub mod vec3;
 pub mod ray;
@@ -49,3 +52,10 @@ pub use pdf::*;
 pub use scene::*;
 pub use output::*;
 pub use core::*;
+
+macro_rules! perrln {
+    ($($arg:tt)*) => ({
+        use std::io::{Write, stderr};
+        writeln!(&mut stderr(), $($arg)*).ok();
+    })
+}

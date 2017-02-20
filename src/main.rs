@@ -2,6 +2,8 @@
 
 extern crate raytracer;
 extern crate image;
+#[macro_use]
+extern crate clap;
 
 use raytracer::*;
 
@@ -62,7 +64,7 @@ fn cornell_box() -> Scene {
     list.add_hitable(FlipNormals::new(Box::new(XYRect::new(0., 555., 0., 555., 555., white.clone()))));
 
     let glass = Rc::new(Dielectric::new(1.5));
-    list.add_hitable(Sphere::new(Vec3::new(190., 90., 190.), 90., glass));
+    list.add_hitable(Sphere::new(Vec3::new(190., 90., 190.), 90., glass.clone()));
 
     // let b = Box::new(HBox::new(Vec3::new(0., 0., 0.), Vec3::new(165., 165., 165.), white.clone()));
     // list.add_hitable(Translate::new(Box::new(
@@ -91,9 +93,9 @@ fn cornell_box() -> Scene {
     let ny = 500;
     let camera = Camera::new(lookfrom,
                              lookat,
-                             Vec3::new(0.0, 1.0, 0.0),
-                             40.0,
-                             nx as f64 / ny as f64,
+                             Vec3::new(0.0, 1.0, 0.0), // vup
+                             40.0, // vfov
+                             nx as f64 / ny as f64, // aspect
                              aperture,
                              dist_to_focus,
                              0.0,
@@ -102,7 +104,7 @@ fn cornell_box() -> Scene {
 
     let output = OutputSettings {
         format: OutputFormat::Png,
-        filename_template: String::from("output.png"),
+        filename_template: String::from("output.ppm"),
         width: nx,
         height: ny,
     };
@@ -112,7 +114,7 @@ fn cornell_box() -> Scene {
         light_shapes: Box::new(light_shapes),
         camera: camera,
         output_settings: output,
-        num_samples: 10,
+        num_samples: 100,
     }
 }
 
@@ -241,8 +243,86 @@ fn final_scene() -> Box<Hitable> {
 // y-up, x is right (right handed coordinate system)
 // into screen is -z
 
+fn is_numeric(val: String) -> std::result::Result<(), String> {
+    match val.parse::<u32>() {
+        Ok(..) => Ok(()),
+        Err(..) => Err(String::from("Value must be a number.")),
+    }
+}
+
+macro_rules! arg_value_with_default {
+    ($m:ident, $v:expr, $t:ty, $d:expr) => {
+        arg_value_with_default!($m.value_of($v), $t, $d)
+    };
+    ($m:ident.value_of($v:expr), $t:ty, $d:expr) => {
+        if let Some(v) = $m.value_of($v) {
+            match v.parse::<$t>() {
+                Ok(val) => val,
+                Err(_) => clap::Error::value_validation_auto(
+                        format!("The argument '{}' isn't a valid value", v)).exit()
+            }
+        } else {
+            $d
+        }
+    }
+}
+
 fn main() {
-    let scene = cornell_box();
+    let mut app = clap::App::new("raytracer")
+        .version("0.1.0")
+        .about("Experimental raytracer.")
+        .arg(clap::Arg::with_name("output")
+            .long("output")
+            .takes_value(true)
+            .value_name("OUTPUT")
+            .display_order(1)
+            .conflicts_with("gui")
+            .help("Output filename"))
+        .arg(clap::Arg::with_name("width")
+            .long("width")
+            .takes_value(true)
+            .value_name("WIDTH")
+            .display_order(2)
+            .help("Image width"))
+        .arg(clap::Arg::with_name("height")
+            .long("height")
+            .takes_value(true)
+            .value_name("HEIGHT")
+            .display_order(3)
+            .help("Image height"));
+    #[cfg(feature="gui")]
+    {
+        app = app.arg(clap::Arg::with_name("gui")
+            .long("gui")
+            .help("Render into a GUI window"));
+    }
+    let matches = app.get_matches();
+
+    let mut scene = cornell_box();
+    #[cfg(feature="gui")]
+    {
+        if matches.is_present("gui") {
+            scene.output_settings.format = OutputFormat::Gui;
+        }
+    }
+    if matches.is_present("output") {
+        let filename = matches.value_of("output").unwrap().to_string();
+        if let Err(e) = scene.output_settings.set_filename_template(filename) {
+            let desc = format!("Invalid filename: {}", e.description());
+            clap::Error::with_description(&desc, clap::ErrorKind::ValueValidation).exit();
+            // perrln!();
+            // std::process::exit(1);
+        }
+    }
+    scene.output_settings.width = arg_value_with_default!(matches, "width", u32, scene.output_settings.width);
+    scene.output_settings.height = arg_value_with_default!(matches, "height", u32, scene.output_settings.height);
+
     let mut output = new_output(&scene.output_settings, &scene).unwrap();
     render(&scene, &scene.output_settings, &mut output);
+    #[cfg(feature="gui")]
+    {
+        if matches.is_present("gui") {
+            output.wait_to_exit();
+        }
+    }
 }

@@ -19,3 +19,11 @@ impl Rng {
         self.rng.gen::<f64>()
     }
 }
+
+#[macro_export]
+macro_rules! perrln {
+    ($($arg:tt)*) => ({
+        use std::io::{Write, stderr};
+        writeln!(&mut stderr(), $($arg)*).ok();
+    })
+}
